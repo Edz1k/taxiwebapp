@@ -48,6 +48,56 @@ const ERROR_MESSAGES: Record<string, string> = {
   'trip is not completed yet': 'Оценить можно только завершенную поездку.',
   'trip not found': 'Поездка не найдена.',
   'user not found': 'Пользователь не найден.',
+
+  // park / invite / driver-park
+  'access denied': 'Доступ запрещён.',
+  'access denied or room closed': 'Доступ запрещён или чат закрыт.',
+  'driver does not belong to a taxi park': 'Водитель не состоит в таксопарке.',
+  'driver not in your park': 'Водитель не состоит в вашем парке.',
+  'failed to accept invite': 'Не удалось принять приглашение.',
+  'failed to create invite': 'Не удалось создать приглашение.',
+  'failed to get drivers': 'Не удалось загрузить список водителей.',
+  'failed to get invites': 'Не удалось загрузить приглашения.',
+  'invalid driver id': 'Неверный идентификатор водителя.',
+
+  // park chat
+  'failed to close room': 'Не удалось закрыть обращение.',
+  'failed to get messages': 'Не удалось загрузить сообщения.',
+  'failed to list rooms': 'Не удалось загрузить чаты.',
+  'failed to send message': 'Не удалось отправить сообщение.',
+  'invalid room id': 'Неверный идентификатор чата.',
+  'room not found': 'Чат не найден.',
+
+  // places
+  'failed to delete place': 'Не удалось удалить адрес.',
+  'failed to update place': 'Не удалось обновить адрес.',
+  'invalid place id': 'Неверный идентификатор адреса.',
+
+  // wallet
+  'insufficient wallet balance': 'Недостаточно средств на балансе.',
+  'wallet not found': 'Кошелёк не найден.',
+
+  // auth
+  'invalid telegram data': 'Не удалось проверить Telegram-вход. Войдите заново.',
+  'logout failed': 'Не удалось завершить сессию.',
+
+  // admin — роли
+  'commission rate must be between 0 and 0.03': 'Комиссия должна быть от 0% до 3%.',
+  'failed to create park owner': 'Не удалось создать владельца парка.',
+  'failed to load roles': 'Не удалось загрузить роли.',
+  'failed to update role': 'Не удалось обновить роль.',
+  'insufficient privilege to assign this role': 'Недостаточно привилегий для назначения этой роли.',
+  'invalid role': 'Неверная роль.',
+  'invalid user id': 'Неверный идентификатор пользователя.',
+  'role not assignable via api': 'Эту роль нельзя назначить через API.',
+
+  // admin — parks
+  'failed to get analytics': 'Не удалось загрузить аналитику.',
+  'failed to list parks': 'Не удалось загрузить список таксопарков.',
+  'failed to reject park': 'Не удалось отклонить заявку таксопарка.',
+  'failed to save park': 'Не удалось сохранить данные таксопарка.',
+  'failed to verify park': 'Не удалось верифицировать таксопарк.',
+  'taxi park already registered for this owner': 'Таксопарк уже зарегистрирован для этого владельца.',
 }
 
 function statusFallback(status: number, fallback: string) {

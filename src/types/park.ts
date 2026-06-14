@@ -10,6 +10,19 @@ export interface TaxiPark {
   phone: string
 }
 
+export interface ParkChatRoom {
+  id: string
+  park_id: string
+  driver_id: string
+  status: 'closed' | 'open'
+  created_at: string
+  updated_at: string
+}
+
+export interface AdminParkChatsResponse {
+  rooms: ParkChatRoom[]
+}
+
 export interface TaxiParkRegisterPayload {
   name: string
   description?: string

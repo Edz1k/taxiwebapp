@@ -52,7 +52,7 @@ function formatDate(value: string) {
       </header>
 
       <div class="mt-5 overflow-hidden rounded-2xl bg-white/5">
-        <div class="grid grid-cols-[1fr_120px_120px_120px_140px] gap-3 border-b border-white/8 px-4 py-3 text-xs text-slate-500 font-900 uppercase">
+        <div class="grid grid-cols-[1fr_120px_120px_120px_200px] gap-3 border-b border-white/8 px-4 py-3 text-xs text-slate-500 font-900 uppercase">
           <span>Парк</span>
           <span>БИН</span>
           <span>Статус</span>
@@ -72,7 +72,7 @@ function formatDate(value: string) {
           v-for="park in admin.parks"
           v-else
           :key="park.id"
-          class="grid grid-cols-[1fr_120px_120px_120px_140px] items-center gap-3 border-b border-white/6 px-4 py-3 last:border-b-0"
+          class="grid grid-cols-[1fr_120px_120px_120px_200px] items-center gap-3 border-b border-white/6 px-4 py-3 last:border-b-0"
         >
           <div class="min-w-0">
             <p class="truncate text-sm font-900">
@@ -89,15 +89,26 @@ function formatDate(value: string) {
           </span>
           <span class="text-sm text-slate-400 font-800">{{ formatDate(park.created_at) }}</span>
 
-          <button
-            :disabled="admin.isMutating || park.is_verified"
-            class="h-10 rounded-xl text-sm font-900 transition active:scale-[0.98] disabled:opacity-50"
-            :class="park.is_verified ? 'bg-white/8 text-slate-400' : 'bg-main-500 text-white'"
-            type="button"
-            @click="admin.verifyPark(park)"
-          >
-            {{ park.is_verified ? 'Готово' : 'Подтвердить' }}
-          </button>
+          <div class="flex items-center justify-end gap-2">
+            <button
+              :disabled="admin.isMutating || park.is_verified"
+              class="h-10 flex-1 rounded-xl text-sm font-900 transition active:scale-[0.98] disabled:opacity-50"
+              :class="park.is_verified ? 'bg-white/8 text-slate-400' : 'bg-main-500 text-white'"
+              type="button"
+              @click="admin.verifyPark(park)"
+            >
+              {{ park.is_verified ? 'Готово' : 'Подтвердить' }}
+            </button>
+            <button
+              v-if="!park.is_verified"
+              :disabled="admin.isMutating"
+              class="h-10 rounded-xl bg-red-500/12 px-3 text-sm text-red-300 font-900 transition active:scale-[0.98] disabled:opacity-50"
+              type="button"
+              @click="admin.rejectPark(park)"
+            >
+              Отклонить
+            </button>
+          </div>
         </div>
       </div>
     </section>

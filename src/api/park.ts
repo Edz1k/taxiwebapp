@@ -1,4 +1,5 @@
 import type {
+  AdminParkChatsResponse,
   AdminParksResponse,
   ParkAnalytics,
   ParkDriversResponse,
@@ -61,5 +62,17 @@ export function listAdminParks(limit = 20, offset = 0) {
 export function verifyAdminPark(id: string) {
   return apiRequest<{ message: string }>(`/admin/parks/${id}/verify`, {
     method: 'POST',
+  })
+}
+
+export function rejectAdminPark(id: string) {
+  return apiRequest<{ message: string }>(`/admin/parks/${id}/reject`, {
+    method: 'POST',
+  })
+}
+
+export function listAdminParkChats(params: { limit?: number, offset?: number, status?: string } = {}) {
+  return apiRequest<AdminParkChatsResponse>('/admin/park-chats', {
+    params,
   })
 }

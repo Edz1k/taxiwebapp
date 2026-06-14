@@ -1,21 +1,23 @@
-import type { AdminAssignableRole, AdminListTripsParams, AdminListUsersParams, AdminUser } from '~/types/admin'
-import type { TaxiPark } from '~/types/park'
+import type { AdminAssignableRole, AdminListTripsParams, AdminListUsersParams, AdminUser, CreateParkOwnerPayload } from '~/types/admin'
+import type { ParkChatRoom, TaxiPark } from '~/types/park'
 import type { Trip } from '~/types/trips'
 import { acceptHMRUpdate, defineStore } from 'pinia'
-import { addAdminUserRole, blockAdminUser, getAdminTrip, listAdminTrips, listAdminUsers, removeAdminUserRole } from '~/api/admin'
+import { addAdminUserRole, blockAdminUser, createParkOwner as createParkOwnerApi, getAdminTrip, listAdminTrips, listAdminUsers, removeAdminUserRole } from '~/api/admin'
 import { showErrorToast } from '~/api/errors'
-import { listAdminParks, verifyAdminPark } from '~/api/park'
+import { listAdminParkChats, listAdminParks, rejectAdminPark, verifyAdminPark } from '~/api/park'
 
 export const useAdminStore = defineStore('admin', () => {
   const users = ref<AdminUser[]>([])
   const trips = ref<Trip[]>([])
   const parks = ref<TaxiPark[]>([])
+  const parkChats = ref<ParkChatRoom[]>([])
   const selectedTrip = ref<Trip | null>(null)
   const usersTotal = ref(0)
   const tripsTotal = ref(0)
   const isLoadingUsers = ref(false)
   const isLoadingTrips = ref(false)
   const isLoadingParks = ref(false)
+  const isLoadingParkChats = ref(false)
   const isMutating = ref(false)
   const errorMessage = ref('')
 
@@ -160,18 +162,74 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
+  async function rejectPark(park: TaxiPark) {
+    isMutating.value = true
+    errorMessage.value = ''
+
+    try {
+      await rejectAdminPark(park.id)
+      parks.value = parks.value.filter(p => p.id !== park.id)
+    }
+    catch (error) {
+      errorMessage.value = showErrorToast(error, 'Не удалось отклонить таксопарк.')
+      throw error
+    }
+    finally {
+      isMutating.value = false
+    }
+  }
+
+  async function createParkOwner(payload: CreateParkOwnerPayload) {
+    isMutating.value = true
+    errorMessage.value = ''
+
+    try {
+      return await createParkOwnerApi(payload)
+    }
+    catch (error) {
+      errorMessage.value = showErrorToast(error, 'Не удалось создать владельца парка.')
+      throw error
+    }
+    finally {
+      isMutating.value = false
+    }
+  }
+
+  async function loadParkChats(params: { status?: string, limit?: number, offset?: number } = {}) {
+    isLoadingParkChats.value = true
+    errorMessage.value = ''
+
+    try {
+      const response = await listAdminParkChats(params)
+      parkChats.value = response.rooms
+      return response
+    }
+    catch (error) {
+      errorMessage.value = showErrorToast(error, 'Не удалось загрузить чаты парков.')
+      throw error
+    }
+    finally {
+      isLoadingParkChats.value = false
+    }
+  }
+
   return {
     errorMessage,
     isLoadingTrips,
     isLoadingParks,
+    isLoadingParkChats,
     isLoadingUsers,
     isMutating,
+    createParkOwner,
     grantUserRole,
+    loadParkChats,
     loadParks,
     loadTrip,
     loadTrips,
     loadUsers,
+    parkChats,
     parks,
+    rejectPark,
     revokeUserRole,
     selectedTrip,
     setUserBlocked,

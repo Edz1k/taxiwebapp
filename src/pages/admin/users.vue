@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import type { AdminAssignableRole, AdminUser, AdminUserRole } from '~/types/admin'
 import { useAdminStore } from '~/stores/admin'
+import { useAuthStore } from '~/stores/auth'
 
 const admin = useAdminStore()
+const auth = useAuthStore()
 const role = ref<AdminUserRole | ''>('')
+const showCreateParkOwner = ref(false)
+const parkOwnerForm = reactive({ phone: '', name: '' })
+const parkOwnerSuccess = ref('')
+
+const isSuperAdmin = computed(() => auth.roles.includes('superadmin'))
 
 const roles: Array<{ label: string, value: AdminUserRole | '' }> = [
   { label: 'Все', value: '' },
@@ -14,13 +21,19 @@ const roles: Array<{ label: string, value: AdminUserRole | '' }> = [
   { label: 'Пассажиры', value: 'passenger' },
   { label: 'Водители', value: 'driver' },
 ]
-const assignableRoles: Array<{ label: string, value: AdminAssignableRole }> = [
-  { label: 'Админы', value: 'admin' },
-  { label: 'Поддержка', value: 'tech_support' },
-  { label: 'Парки', value: 'park' },
-  { label: 'Пассажиры', value: 'passenger' },
-  { label: 'Водители', value: 'driver' },
-]
+
+// superadmin может выдавать admin, обычный admin — нет
+const assignableRoles = computed<Array<{ label: string, value: AdminAssignableRole }>>(() => {
+  const base: Array<{ label: string, value: AdminAssignableRole }> = [
+    { label: 'Поддержка', value: 'tech_support' },
+    { label: 'Парки', value: 'park' },
+    { label: 'Пассажиры', value: 'passenger' },
+    { label: 'Водители', value: 'driver' },
+  ]
+  if (isSuperAdmin.value)
+    return [{ label: 'Админ', value: 'admin' }, ...base]
+  return base
+})
 
 definePage({
   meta: {
@@ -48,8 +61,10 @@ function displayName(user: { first_name: null | string, last_name: null | string
   return fullName || user.telegram_username || 'Без имени'
 }
 
-function userRoles(user: AdminUser) {
-  return user.roles
+function userRoles(user: AdminUser): AdminUserRole[] {
+  if (user.roles?.length)
+    return user.roles
+  return user.role ? [user.role] : []
 }
 
 function roleLabel(role: AdminUserRole) {
@@ -73,6 +88,15 @@ function toggleRole(user: AdminUser, role: AdminAssignableRole) {
   if (canRevokeRole(user, role))
     return admin.revokeUserRole(user, role)
 }
+
+async function submitCreateParkOwner() {
+  parkOwnerSuccess.value = ''
+  const result = await admin.createParkOwner({ phone: parkOwnerForm.phone, name: parkOwnerForm.name || undefined })
+  parkOwnerSuccess.value = `Владелец парка создан: ${result.phone}`
+  parkOwnerForm.phone = ''
+  parkOwnerForm.name = ''
+  showCreateParkOwner.value = false
+}
 </script>
 
 <template>
@@ -93,7 +117,45 @@ function toggleRole(user: AdminUser, role: AdminAssignableRole) {
             {{ item.label }}
           </option>
         </select>
+
+        <button
+          class="h-11 rounded-2xl bg-main-500 px-4 text-sm font-900"
+          type="button"
+          @click="showCreateParkOwner = !showCreateParkOwner"
+        >
+          + Владелец парка
+        </button>
       </header>
+
+      <form
+        v-if="showCreateParkOwner"
+        class="mt-4 max-w-md rounded-2xl bg-white/5 p-5"
+        @submit.prevent="submitCreateParkOwner"
+      >
+        <h2 class="text-base font-950">
+          Создать владельца парка
+        </h2>
+        <div class="grid mt-4 gap-3">
+          <label class="grid gap-2 text-sm text-slate-300 font-800">
+            Телефон *
+            <input v-model="parkOwnerForm.phone" required placeholder="+77001234567" class="h-12 border border-white/10 rounded-2xl bg-white/5 px-4 text-white outline-none focus:border-main-400">
+          </label>
+          <label class="grid gap-2 text-sm text-slate-300 font-800">
+            Имя
+            <input v-model="parkOwnerForm.name" placeholder="Необязательно" class="h-12 border border-white/10 rounded-2xl bg-white/5 px-4 text-white outline-none focus:border-main-400">
+          </label>
+        </div>
+        <p v-if="parkOwnerSuccess" class="mt-3 text-sm text-emerald-300">
+          {{ parkOwnerSuccess }}
+        </p>
+        <button
+          :disabled="admin.isMutating || !parkOwnerForm.phone"
+          class="mt-4 h-11 rounded-2xl bg-main-500 px-5 text-sm font-900 disabled:opacity-60"
+          type="submit"
+        >
+          {{ admin.isMutating ? 'Создаём...' : 'Создать' }}
+        </button>
+      </form>
 
       <div class="mt-5 overflow-hidden rounded-2xl bg-white/5">
         <div class="grid grid-cols-[minmax(180px,1fr)_minmax(240px,1.2fr)_100px_130px] gap-3 border-b border-white/8 px-4 py-3 text-xs text-slate-500 font-900 uppercase">

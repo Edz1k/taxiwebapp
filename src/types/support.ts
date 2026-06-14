@@ -18,3 +18,15 @@ export interface SupportListRoomsParams {
 export interface SupportListRoomsResponse {
   rooms: SupportRoom[]
 }
+
+export interface SupportMessage {
+  id: string
+  sender_id: string
+  content: string
+  sent_at: string
+}
+
+export interface SupportMessagesResponse {
+  messages: SupportMessage[]
+  room_id: string
+}

@@ -1,12 +1,23 @@
-import type { SupportListRoomsParams, SupportRoom } from '~/types/support'
+import type { SupportListRoomsParams, SupportMessage, SupportRoom } from '~/types/support'
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { showErrorToast } from '~/api/errors'
-import { assignAdminSupportRoom, closeAdminSupportRoom, listAdminSupportRooms } from '~/api/support'
+import {
+  assignAdminSupportRoom,
+  closeAdminSupportRoom,
+  getAdminSupportMessages,
+  getAdminSupportRoom,
+  listAdminSupportRooms,
+  sendAdminSupportMessage,
+} from '~/api/support'
 
 export const useSupportStore = defineStore('support', () => {
   const rooms = ref<SupportRoom[]>([])
+  const currentRoom = ref<SupportRoom | null>(null)
+  const messages = ref<SupportMessage[]>([])
   const isLoading = ref(false)
+  const isLoadingMessages = ref(false)
   const isMutating = ref(false)
+  const isSending = ref(false)
   const errorMessage = ref('')
 
   async function loadRooms(params: SupportListRoomsParams = {}) {
@@ -27,12 +38,65 @@ export const useSupportStore = defineStore('support', () => {
     }
   }
 
+  async function loadRoom(id: string) {
+    isLoading.value = true
+    errorMessage.value = ''
+
+    try {
+      currentRoom.value = await getAdminSupportRoom(id)
+      return currentRoom.value
+    }
+    catch (error) {
+      errorMessage.value = showErrorToast(error, 'Не удалось загрузить обращение.')
+      throw error
+    }
+    finally {
+      isLoading.value = false
+    }
+  }
+
+  async function loadMessages(id: string) {
+    isLoadingMessages.value = true
+    errorMessage.value = ''
+
+    try {
+      const response = await getAdminSupportMessages(id, { limit: 100 })
+      messages.value = response.messages ?? []
+      return response
+    }
+    catch (error) {
+      errorMessage.value = showErrorToast(error, 'Не удалось загрузить сообщения.')
+      throw error
+    }
+    finally {
+      isLoadingMessages.value = false
+    }
+  }
+
+  async function sendMessage(id: string, content: string) {
+    isSending.value = true
+
+    try {
+      const msg = await sendAdminSupportMessage(id, content)
+      messages.value = [...messages.value, msg]
+      return msg
+    }
+    catch (error) {
+      showErrorToast(error, 'Не удалось отправить сообщение.')
+      throw error
+    }
+    finally {
+      isSending.value = false
+    }
+  }
+
   async function assignRoom(room: SupportRoom) {
     isMutating.value = true
     errorMessage.value = ''
 
     try {
       await assignAdminSupportRoom(room.id)
+      room.agent_id = room.agent_id ?? 'assigned'
     }
     catch (error) {
       errorMessage.value = showErrorToast(error, 'Не удалось назначить обращение.')
@@ -50,6 +114,8 @@ export const useSupportStore = defineStore('support', () => {
     try {
       await closeAdminSupportRoom(room.id)
       room.status = 'closed'
+      if (currentRoom.value?.id === room.id)
+        currentRoom.value.status = 'closed'
     }
     catch (error) {
       errorMessage.value = showErrorToast(error, 'Не удалось закрыть обращение.')
@@ -63,11 +129,18 @@ export const useSupportStore = defineStore('support', () => {
   return {
     assignRoom,
     closeRoom,
+    currentRoom,
     errorMessage,
     isLoading,
+    isLoadingMessages,
     isMutating,
+    isSending,
+    loadMessages,
+    loadRoom,
     loadRooms,
+    messages,
     rooms,
+    sendMessage,
   }
 })
 

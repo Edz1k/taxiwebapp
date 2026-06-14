@@ -47,6 +47,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/admin/park-chats': RouteRecordInfo<
+      '/admin/park-chats',
+      '/admin/park-chats',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/admin/parks': RouteRecordInfo<
       '/admin/parks',
       '/admin/parks',
@@ -96,6 +103,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/support/[id]': RouteRecordInfo<
+      '/support/[id]',
+      '/support/:id',
+      { id: ParamValue<true> },
+      { id: ParamValue<false> },
+      | never
+    >,
   }
 
   /**
@@ -124,6 +138,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/admin/index.vue': {
       routes:
         | '/admin/'
+      views:
+        | never
+    }
+    'src/pages/admin/park-chats.vue': {
+      routes:
+        | '/admin/park-chats'
       views:
         | never
     }
@@ -166,6 +186,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/support/index.vue': {
       routes:
         | '/support/'
+      views:
+        | never
+    }
+    'src/pages/support/[id].vue': {
+      routes:
+        | '/support/[id]'
       views:
         | never
     }

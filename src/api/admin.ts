@@ -7,6 +7,8 @@ import type {
   AdminListUsersResponse,
   AdminUpdateUserRolesPayload,
   AdminUpdateUserRolesResponse,
+  CreateParkOwnerPayload,
+  CreateParkOwnerResponse,
 } from '~/types/admin'
 import type { Trip } from '~/types/trips'
 import { apiRequest } from '~/api/client'
@@ -54,4 +56,11 @@ export function listAdminTrips(params: AdminListTripsParams = {}) {
 
 export function getAdminTrip(id: string) {
   return apiRequest<Trip>(`/admin/trips/${id}`)
+}
+
+export function createParkOwner(payload: CreateParkOwnerPayload) {
+  return apiRequest<CreateParkOwnerResponse>('/admin/park-owners', {
+    method: 'POST',
+    body: payload,
+  })
 }

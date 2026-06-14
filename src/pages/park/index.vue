@@ -12,7 +12,7 @@ definePage({
   meta: {
     authRedirect: '/login',
     requiresAuth: true,
-    requiredRole: 'admin',
+    requiredRole: ['park', 'admin', 'superadmin'],
   },
 })
 

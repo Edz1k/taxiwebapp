@@ -62,6 +62,18 @@ useHead({
             Проверка парков, владельцы, заявки.
           </p>
         </RouterLink>
+
+        <RouterLink class="rounded-2xl bg-white/5 p-5 transition active:scale-[0.98]" to="/admin/park-chats">
+          <span class="h-12 w-12 flex items-center justify-center rounded-2xl bg-main-500/18 text-main-200">
+            <span class="i-mdi-chat-outline text-7" />
+          </span>
+          <h2 class="mt-5 text-xl font-950">
+            Чаты парков
+          </h2>
+          <p class="mt-1 text-sm text-slate-400">
+            Переписка таксопарков с водителями.
+          </p>
+        </RouterLink>
       </div>
     </section>
   </main>

@@ -62,7 +62,7 @@ function formatDate(value: string) {
       </header>
 
       <div class="mt-5 overflow-hidden rounded-2xl bg-white/5">
-        <div class="grid grid-cols-[1fr_120px_150px_220px] gap-3 border-b border-white/8 px-4 py-3 text-xs text-slate-500 font-900 uppercase">
+        <div class="grid grid-cols-[1fr_120px_150px_300px] gap-3 border-b border-white/8 px-4 py-3 text-xs text-slate-500 font-900 uppercase">
           <span>Обращение</span>
           <span>Статус</span>
           <span>Обновлено</span>
@@ -81,7 +81,7 @@ function formatDate(value: string) {
           v-for="room in support.rooms"
           v-else
           :key="room.id"
-          class="grid grid-cols-[1fr_120px_150px_220px] items-center gap-3 border-b border-white/6 px-4 py-3 last:border-b-0"
+          class="grid grid-cols-[1fr_120px_150px_300px] items-center gap-3 border-b border-white/6 px-4 py-3 last:border-b-0"
         >
           <div class="min-w-0">
             <p class="truncate text-sm font-900">
@@ -98,6 +98,12 @@ function formatDate(value: string) {
           <span class="text-sm text-slate-400 font-800">{{ formatDate(room.updated_at) }}</span>
 
           <div class="flex justify-end gap-2">
+            <RouterLink
+              :to="`/support/${room.id}`"
+              class="h-10 flex items-center rounded-xl bg-main-500/15 px-3 text-sm text-main-300 font-900 transition active:scale-[0.98]"
+            >
+              Открыть
+            </RouterLink>
             <button
               :disabled="support.isMutating || room.status === 'closed'"
               class="h-10 rounded-xl bg-white/8 px-3 text-sm font-900 transition active:scale-[0.98] disabled:opacity-50"

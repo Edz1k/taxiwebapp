@@ -13,6 +13,7 @@ export interface AdminUser {
   is_blocked: boolean
   last_name: null | string
   phone: string
+  role?: AdminUserRole
   roles: AdminUserRole[]
   telegram_username: null | string
   updated_at?: string
@@ -60,4 +61,18 @@ export interface AdminListTripsResponse {
   offset: number
   total: number
   trips: Trip[]
+}
+
+export interface CreateParkOwnerPayload {
+  phone: string
+  name?: string
+}
+
+export interface CreateParkOwnerResponse {
+  id: string
+  phone: string
+  roles: AdminUserRole[]
+  first_name: null | string
+  last_name: null | string
+  created_at: string
 }
