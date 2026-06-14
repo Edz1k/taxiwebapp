@@ -1,9 +1,9 @@
 const OBSOLETE_ACCESS_TOKEN_KEY = 'taxiapp_access_token'
 const OBSOLETE_REFRESH_TOKEN_KEY = 'taxiapp_refresh_token'
-const PHONE_KEY = 'taxiapp_pending_phone'
-const DEVICE_FP_KEY = 'taxiapp_device_fp'
 const OBSOLETE_ACTIVE_ROLE_KEY = 'taxiapp_active_role'
-export const AUTH_SESSION_CHANGED_EVENT = 'taxiapp:auth-session-changed'
+const PHONE_KEY = 'taxiwebapp_pending_phone'
+const DEVICE_FP_KEY = 'taxiwebapp_device_fp'
+export const AUTH_SESSION_CHANGED_EVENT = 'taxiwebapp:auth-session-changed'
 
 function canUseStorage() {
   return typeof window !== 'undefined'

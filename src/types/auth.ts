@@ -5,7 +5,7 @@ export interface MessageResponse {
 export type AuthRole = 'admin' | 'driver' | 'park' | 'passenger' | 'superadmin' | 'tech_support'
 
 export interface AuthLoginResponse {
-  role: AuthRole
+  roles: AuthRole[]
 }
 
 export interface AuthSession {
@@ -14,8 +14,7 @@ export interface AuthSession {
   id: string
   last_name: null | string
   phone: string
-  role: AuthRole
-  roles?: AuthRole[]
+  roles: AuthRole[]
   telegram_user_id: null | number
 }
 
@@ -35,15 +34,6 @@ export interface VerifyOtpPayload {
 
 export interface RefreshTokenPayload {
   deviceFingerprint?: string
-}
-
-export interface TelegramAuthPayload {
-  initData: string
-  deviceFingerprint?: string
-}
-
-export interface DriverTelegramAuthResponse extends AuthLoginResponse {
-  phone_verified: boolean
 }
 
 export type LogoutPayload = Record<string, never>

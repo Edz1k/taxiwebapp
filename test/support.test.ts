@@ -2,10 +2,9 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { showErrorToast } from '~/api/errors'
 import {
-  closeSupportRoom,
-  getSupportMessages,
-  openSupportRoom,
-  sendSupportMessage,
+  assignAdminSupportRoom,
+  closeAdminSupportRoom,
+  listAdminSupportRooms,
 } from '~/api/support'
 import { useSupportStore } from '~/stores/support'
 
@@ -14,11 +13,19 @@ vi.mock('~/api/errors', () => ({
 }))
 
 vi.mock('~/api/support', () => ({
-  openSupportRoom: vi.fn(),
-  getSupportMessages: vi.fn(),
-  sendSupportMessage: vi.fn(),
-  closeSupportRoom: vi.fn(),
+  assignAdminSupportRoom: vi.fn(),
+  closeAdminSupportRoom: vi.fn(),
+  listAdminSupportRooms: vi.fn(),
 }))
+
+const openRoom = {
+  agent_id: null,
+  created_at: '2026-06-14T10:00:00Z',
+  id: 'room-id',
+  passenger_id: 'passenger-id',
+  status: 'open' as const,
+  updated_at: '2026-06-14T10:00:00Z',
+}
 
 describe('support store', () => {
   beforeEach(() => {
@@ -29,150 +36,60 @@ describe('support store', () => {
   it('has default values', () => {
     const store = useSupportStore()
 
-    expect(store.room).toBeNull()
-    expect(store.messages).toEqual([])
+    expect(store.rooms).toEqual([])
     expect(store.isLoading).toBe(false)
-    expect(store.isSending).toBe(false)
+    expect(store.isMutating).toBe(false)
     expect(store.errorMessage).toBe('')
   })
 
-  it('opens support room', async () => {
-    const room = {
-      id: 1,
-      status: 'open',
-    }
-
-    vi.mocked(openSupportRoom).mockResolvedValue(room as any)
-    vi.mocked(getSupportMessages).mockResolvedValue({
-      messages: [],
-    } as any)
-
-    const store = useSupportStore()
-
-    const result = await store.ensureRoom()
-
-    expect(openSupportRoom).toHaveBeenCalled()
-    expect(store.room).toEqual(room)
-    expect(result).toEqual(room)
-    expect(store.isLoading).toBe(false)
-  })
-
-  it('does not open room again if room already exists', async () => {
-    const store = useSupportStore()
-
-    store.room = {
-      id: 1,
-      status: 'open',
-    } as any
-
-    const result = await store.ensureRoom()
-
-    expect(openSupportRoom).not.toHaveBeenCalled()
-    expect(result).toEqual({
-      id: 1,
-      status: 'open',
+  it('loads admin support rooms', async () => {
+    vi.mocked(listAdminSupportRooms).mockResolvedValue({
+      rooms: [openRoom],
     })
-  })
-
-  it('loads messages', async () => {
     const store = useSupportStore()
 
-    store.room = {
-      id: 1,
-      status: 'open',
-    } as any
+    const result = await store.loadRooms({ status: 'open' })
 
-    const messages = [
-      {
-        id: 1,
-        content: 'Hello',
-      },
-    ]
-
-    vi.mocked(getSupportMessages).mockResolvedValue({
-      messages,
-    } as any)
-
-    await store.loadMessages()
-
-    expect(getSupportMessages).toHaveBeenCalledWith(1, 50, 0)
-    expect(store.messages).toEqual(messages)
+    expect(listAdminSupportRooms).toHaveBeenCalledWith({ status: 'open' })
+    expect(store.rooms).toEqual([openRoom])
+    expect(result).toEqual({ rooms: [openRoom] })
     expect(store.isLoading).toBe(false)
   })
 
-  it('does not load messages without room', async () => {
+  it('assigns support room', async () => {
+    vi.mocked(assignAdminSupportRoom).mockResolvedValue({ message: 'assigned' })
     const store = useSupportStore()
 
-    await store.loadMessages()
+    await store.assignRoom(openRoom)
 
-    expect(getSupportMessages).not.toHaveBeenCalled()
+    expect(assignAdminSupportRoom).toHaveBeenCalledWith('room-id')
+    expect(store.isMutating).toBe(false)
   })
 
-  it('sends message', async () => {
+  it('closes support room locally after backend success', async () => {
+    vi.mocked(closeAdminSupportRoom).mockResolvedValue({ message: 'closed' })
     const store = useSupportStore()
+    const room = { ...openRoom }
 
-    store.room = {
-      id: 1,
-      status: 'open',
-    } as any
+    await store.closeRoom(room)
 
-    const message = {
-      id: 1,
-      content: 'Hello',
-    }
-
-    vi.mocked(sendSupportMessage).mockResolvedValue(message as any)
-
-    const result = await store.sendMessage('  Hello  ')
-
-    expect(sendSupportMessage).toHaveBeenCalledWith(1, {
-      content: 'Hello',
-    })
-
-    expect(store.messages).toEqual([message])
-    expect(result).toEqual(message)
-    expect(store.isSending).toBe(false)
+    expect(closeAdminSupportRoom).toHaveBeenCalledWith('room-id')
+    expect(room.status).toBe('closed')
+    expect(store.isMutating).toBe(false)
   })
 
-  it('does not send empty message', async () => {
+  it('sets error message when loading rooms fails', async () => {
     const store = useSupportStore()
-
-    await store.sendMessage('   ')
-
-    expect(sendSupportMessage).not.toHaveBeenCalled()
-  })
-
-  it('closes room', async () => {
-    const store = useSupportStore()
-
-    store.room = {
-      id: 1,
-      status: 'open',
-    } as any
-
-    vi.mocked(closeSupportRoom).mockResolvedValue(undefined as any)
-
-    await store.closeRoom()
-
-    expect(closeSupportRoom).toHaveBeenCalledWith(1)
-    expect(store.room?.status).toBe('closed')
-    expect(store.isLoading).toBe(false)
-  })
-
-  it('sets error message when opening room fails', async () => {
-    const store = useSupportStore()
-
     const error = new Error('Server error')
 
-    vi.mocked(openSupportRoom).mockRejectedValue(error)
+    vi.mocked(listAdminSupportRooms).mockRejectedValue(error)
 
-    await expect(store.ensureRoom()).rejects.toThrow('Server error')
+    await expect(store.loadRooms()).rejects.toThrow('Server error')
 
     expect(showErrorToast).toHaveBeenCalledWith(
       error,
-      'Не удалось открыть чат поддержки.',
+      'Не удалось загрузить обращения поддержки.',
     )
-
     expect(store.errorMessage).toBe('Ошибка')
     expect(store.isLoading).toBe(false)
   })

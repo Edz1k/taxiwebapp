@@ -1,3 +1,4 @@
+import type { AuthRole } from '~/types/auth'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { install } from '~/modules/authGuard'
 import { useAuthStore } from '~/stores/auth'
@@ -7,22 +8,22 @@ vi.mock('~/stores/auth', () => ({
 }))
 
 interface AuthStub {
-  currentUser: null | { role: string }
+  homePath: string
   isAuthenticated: boolean
   loadSession: ReturnType<typeof vi.fn>
   pendingPhone: string
   restoreSession: ReturnType<typeof vi.fn>
-  role: null | string
+  roles: AuthRole[]
 }
 
 function createAuthStub(overrides: Partial<AuthStub> = {}): AuthStub {
   return {
-    currentUser: null,
+    homePath: '/',
     isAuthenticated: false,
     loadSession: vi.fn(),
     pendingPhone: '',
     restoreSession: vi.fn(),
-    role: null,
+    roles: [],
     ...overrides,
   }
 }
@@ -50,93 +51,102 @@ describe('auth guard', () => {
     vi.clearAllMocks()
   })
 
-  it('redirects protected routes when there is no authenticated session', async () => {
+  it('redirects protected routes to web login when there is no authenticated session', async () => {
     const auth = createAuthStub()
     const guard = installGuard(auth)
 
     const redirect = await guard({
       meta: {
-        authRedirect: '/driver/login',
         requiresAuth: true,
       },
     })
 
     expect(auth.loadSession).toHaveBeenCalled()
     expect(auth.restoreSession).toHaveBeenCalled()
-    expect(redirect).toBe('/driver/login')
+    expect(redirect).toBe('/login')
   })
 
-  it('redirects authenticated users away from routes requiring another role', async () => {
+  it('uses explicit auth redirect when protected routes define one', async () => {
+    const auth = createAuthStub()
+    const guard = installGuard(auth)
+
+    const redirect = await guard({
+      meta: {
+        authRedirect: '/admin-login',
+        requiresAuth: true,
+      },
+    })
+
+    expect(redirect).toBe('/admin-login')
+  })
+
+  it('redirects authenticated users without required role to their web home', async () => {
     const auth = createAuthStub({
-      currentUser: { role: 'passenger' },
+      homePath: '/park',
       isAuthenticated: true,
-      role: 'passenger',
+      roles: ['park'],
     })
     const guard = installGuard(auth)
 
     const redirect = await guard({
       meta: {
-        authRedirect: '/driver/login',
-        requiredRole: 'driver',
+        requiredRole: ['admin', 'superadmin'],
       },
     })
 
-    expect(redirect).toBe('/driver/login')
+    expect(redirect).toBe('/park')
   })
 
-  it('does not redirect a driver away from passenger guest pages', async () => {
+  it('allows any matching role into protected routes', async () => {
     const auth = createAuthStub({
-      currentUser: { role: 'driver' },
+      homePath: '/admin',
       isAuthenticated: true,
-      role: 'driver',
+      roles: ['park', 'admin'],
+    })
+    const guard = installGuard(auth)
+
+    const redirect = await guard({
+      meta: {
+        authRedirect: '/login',
+        requiredRole: ['admin', 'superadmin'],
+      },
+    })
+
+    expect(redirect).toBeUndefined()
+  })
+
+  it('allows superadmin into routes that explicitly include superadmin', async () => {
+    const auth = createAuthStub({
+      homePath: '/admin',
+      isAuthenticated: true,
+      roles: ['superadmin'],
+    })
+    const guard = installGuard(auth)
+
+    const redirect = await guard({
+      meta: {
+        requiredRole: ['admin', 'superadmin'],
+      },
+    })
+
+    expect(redirect).toBeUndefined()
+  })
+
+  it('redirects authenticated users away from guest routes to their role home', async () => {
+    const auth = createAuthStub({
+      homePath: '/admin',
+      isAuthenticated: true,
+      roles: ['admin'],
     })
     const guard = installGuard(auth)
 
     const redirect = await guard({
       meta: {
         guestOnly: true,
-        guestOnlyRole: 'passenger',
-        guestRedirect: '/passenger',
       },
     })
 
-    expect(redirect).toBeUndefined()
-  })
-
-  it('allows matching role into protected routes', async () => {
-    const auth = createAuthStub({
-      currentUser: { role: 'driver' },
-      isAuthenticated: true,
-      role: 'driver',
-    })
-    const guard = installGuard(auth)
-
-    const redirect = await guard({
-      meta: {
-        authRedirect: '/driver/login',
-        requiredRole: 'driver',
-      },
-    })
-
-    expect(redirect).toBeUndefined()
-  })
-
-  it('allows superadmin into admin routes', async () => {
-    const auth = createAuthStub({
-      currentUser: { role: 'superadmin' },
-      isAuthenticated: true,
-      role: 'superadmin',
-    })
-    const guard = installGuard(auth)
-
-    const redirect = await guard({
-      meta: {
-        authRedirect: '/passenger/login',
-        requiredRole: 'admin',
-      },
-    })
-
-    expect(redirect).toBeUndefined()
+    expect(redirect).toBe('/admin')
   })
 
   it('keeps pending-phone verification behind the pending phone state', async () => {
@@ -145,7 +155,6 @@ describe('auth guard', () => {
 
     const redirect = await guard({
       meta: {
-        authRedirect: '/login',
         requiresPendingPhone: true,
       },
     })

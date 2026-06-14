@@ -1,4 +1,4 @@
-import type { AdminListTripsParams, AdminListUsersParams, AdminUser } from '~/types/admin'
+import type { AdminAssignableRole, AdminListTripsParams, AdminListUsersParams, AdminUser } from '~/types/admin'
 import type { TaxiPark } from '~/types/park'
 import type { Trip } from '~/types/trips'
 import { acceptHMRUpdate, defineStore } from 'pinia'
@@ -55,7 +55,7 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
-  async function grantUserRole(user: AdminUser, role: AdminUser['role']) {
+  async function grantUserRole(user: AdminUser, role: AdminAssignableRole) {
     isMutating.value = true
     errorMessage.value = ''
 
@@ -72,7 +72,7 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
-  async function revokeUserRole(user: AdminUser, role: AdminUser['role']) {
+  async function revokeUserRole(user: AdminUser, role: AdminAssignableRole) {
     isMutating.value = true
     errorMessage.value = ''
 

@@ -1,5 +1,4 @@
-import type { DriverProfile } from '~/types/driver'
-import type { ParkAnalytics, ParkInvite, TaxiPark, TaxiParkRegisterPayload, TaxiParkUpdatePayload } from '~/types/park'
+import type { ParkAnalytics, ParkDriver, ParkInvite, TaxiPark, TaxiParkRegisterPayload, TaxiParkUpdatePayload } from '~/types/park'
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { ApiError } from '~/api/client'
 import { showErrorToast } from '~/api/errors'
@@ -13,8 +12,6 @@ import {
   removeParkDriver,
   updateMyPark,
 } from '~/api/park'
-
-type ParkDriver = Pick<DriverProfile, 'id' | 'is_online' | 'rating' | 'total_trips' | 'user_id'>
 
 export const useParkStore = defineStore('park', () => {
   const park = ref<TaxiPark | null>(null)

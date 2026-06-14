@@ -17,12 +17,10 @@
     "sizecheck": "npx vite-bundle-visualizer"
   },
   "dependencies": {
-    "@telegram-apps/sdk": "catalog:frontend",
     "@unhead/vue": "catalog:frontend",
     "@unocss/reset": "catalog:frontend",
     "@vueuse/core": "catalog:frontend",
     "axios": "catalog:build",
-    "mapbox-gl": "catalog:frontend",
     "maska": "catalog:frontend",
     "nprogress": "catalog:frontend",
     "pinia": "catalog:frontend",

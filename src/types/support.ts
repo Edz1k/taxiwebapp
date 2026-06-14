@@ -9,22 +9,6 @@ export interface SupportRoom {
   updated_at: string
 }
 
-export interface SupportMessage {
-  content: string
-  id: string
-  sender_id: string
-  sent_at: string
-}
-
-export interface SupportMessagesResponse {
-  messages: SupportMessage[]
-  room_id: string
-}
-
-export interface SupportSendMessagePayload {
-  content: string
-}
-
 export interface SupportListRoomsParams {
   limit?: number
   offset?: number

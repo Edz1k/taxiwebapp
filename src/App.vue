@@ -1,14 +1,10 @@
 <script setup lang="ts">
-import { useTelegramSafeArea } from '~/composables/useTelegramSafeArea'
-
-useTelegramSafeArea()
-
 useHead({
-  title: 'TaxiApp',
+  title: 'EdTaxi Web',
   meta: [
     {
       name: 'description',
-      content: 'Taxi booking app',
+      content: 'EdTaxi web panel',
     },
   ],
   link: [

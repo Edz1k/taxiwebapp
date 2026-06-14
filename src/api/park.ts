@@ -1,6 +1,5 @@
 import type {
   AdminParksResponse,
-  DriverAcceptInvitePayload,
   ParkAnalytics,
   ParkDriversResponse,
   ParkInvite,
@@ -51,13 +50,6 @@ export function removeParkDriver(id: string) {
 
 export function getParkAnalytics() {
   return apiRequest<ParkAnalytics>('/park/analytics')
-}
-
-export function acceptParkInvite(payload: DriverAcceptInvitePayload) {
-  return apiRequest<{ message: string }>('/driver/invite/accept', {
-    method: 'POST',
-    body: payload,
-  })
 }
 
 export function listAdminParks(limit = 20, offset = 0) {

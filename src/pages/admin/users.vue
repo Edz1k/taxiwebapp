@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AdminUser, AdminUserRole } from '~/types/admin'
+import type { AdminAssignableRole, AdminUser, AdminUserRole } from '~/types/admin'
 import { useAdminStore } from '~/stores/admin'
 
 const admin = useAdminStore()
@@ -7,19 +7,26 @@ const role = ref<AdminUserRole | ''>('')
 
 const roles: Array<{ label: string, value: AdminUserRole | '' }> = [
   { label: 'Все', value: '' },
-  { label: 'Пассажиры', value: 'passenger' },
-  { label: 'Водители', value: 'driver' },
+  { label: 'Суперадмины', value: 'superadmin' },
   { label: 'Админы', value: 'admin' },
   { label: 'Поддержка', value: 'tech_support' },
   { label: 'Парки', value: 'park' },
+  { label: 'Пассажиры', value: 'passenger' },
+  { label: 'Водители', value: 'driver' },
 ]
-const assignableRoles = roles.filter((item): item is { label: string, value: AdminUserRole } => Boolean(item.value))
+const assignableRoles: Array<{ label: string, value: AdminAssignableRole }> = [
+  { label: 'Админы', value: 'admin' },
+  { label: 'Поддержка', value: 'tech_support' },
+  { label: 'Парки', value: 'park' },
+  { label: 'Пассажиры', value: 'passenger' },
+  { label: 'Водители', value: 'driver' },
+]
 
 definePage({
   meta: {
-    authRedirect: '/passenger/login',
+    authRedirect: '/login',
     requiresAuth: true,
-    requiredRole: 'admin',
+    requiredRole: ['admin', 'superadmin'],
   },
 })
 
@@ -42,24 +49,24 @@ function displayName(user: { first_name: null | string, last_name: null | string
 }
 
 function userRoles(user: AdminUser) {
-  return user.roles?.length ? user.roles : [user.role]
+  return user.roles
 }
 
 function roleLabel(role: AdminUserRole) {
-  return assignableRoles.find(item => item.value === role)?.label ?? role
+  return roles.find(item => item.value === role)?.label ?? role
 }
 
-function canGrantRole(user: AdminUser, role: AdminUserRole) {
+function canGrantRole(user: AdminUser, role: AdminAssignableRole) {
   return !userRoles(user).includes(role)
 }
 
-function canRevokeRole(user: AdminUser, role: AdminUserRole) {
+function canRevokeRole(user: AdminUser, role: AdminAssignableRole) {
   const roles = userRoles(user)
 
   return roles.includes(role) && roles.length > 1
 }
 
-function toggleRole(user: AdminUser, role: AdminUserRole) {
+function toggleRole(user: AdminUser, role: AdminAssignableRole) {
   if (canGrantRole(user, role))
     return admin.grantUserRole(user, role)
 

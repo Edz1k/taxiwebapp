@@ -1,6 +1,8 @@
+import type { AuthRole } from '~/types/auth'
 import type { Trip, TripStatus } from '~/types/trips'
 
-export type AdminUserRole = 'admin' | 'driver' | 'park' | 'passenger' | 'tech_support'
+export type AdminUserRole = AuthRole
+export type AdminAssignableRole = Exclude<AuthRole, 'superadmin'>
 
 export interface AdminUser {
   avatar_url: null | string
@@ -11,8 +13,7 @@ export interface AdminUser {
   is_blocked: boolean
   last_name: null | string
   phone: string
-  role: AdminUserRole
-  roles?: AdminUserRole[]
+  roles: AdminUserRole[]
   telegram_username: null | string
   updated_at?: string
 }
@@ -40,7 +41,7 @@ export interface AdminBlockUserResponse {
 }
 
 export interface AdminUpdateUserRolesPayload {
-  role: AdminUserRole
+  role: AdminAssignableRole
 }
 
 export interface AdminUpdateUserRolesResponse {

@@ -13,8 +13,8 @@ defineSlots<{
 </script>
 
 <template>
-  <main class="tg-safe-screen bg-secondary-900 text-white">
-    <div class="mx-auto max-w-sm min-h-[calc(var(--app-viewport-height)-48px-var(--app-safe-area-top)-var(--app-safe-area-bottom))] flex flex-col justify-between">
+  <main class="min-h-screen bg-secondary-900 px-4 py-8 text-white">
+    <div class="mx-auto max-w-sm min-h-[calc(100vh-64px)] flex flex-col justify-between">
       <section class="pt-8">
         <slot name="before" />
 

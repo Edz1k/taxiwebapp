@@ -3,6 +3,7 @@ import type { AuthRole } from '~/types/auth'
 import { useAuthStore } from '~/stores/auth'
 
 type RouteRole = AuthRole | AuthRole[]
+const DEFAULT_AUTH_REDIRECT = '/login'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -24,19 +25,16 @@ function toRoleList(role: RouteRole | undefined) {
   return Array.isArray(role) ? role : [role]
 }
 
-function canAccessRole(currentRole: AuthRole | null, requiredRole: RouteRole | undefined) {
+function canAccessRole(currentRoles: AuthRole[], requiredRole: RouteRole | undefined) {
   const required = toRoleList(requiredRole)
 
   if (!required.length)
     return true
 
-  if (!currentRole)
+  if (!currentRoles.length)
     return false
 
-  if (required.includes(currentRole))
-    return true
-
-  return currentRole === 'superadmin' && required.includes('admin')
+  return required.some(role => currentRoles.includes(role))
 }
 
 export const install: UserModule = ({ router }) => {
@@ -49,15 +47,15 @@ export const install: UserModule = ({ router }) => {
       await auth.restoreSession()
 
     if (to.meta.requiresPendingPhone && !auth.pendingPhone)
-      return to.meta.authRedirect ?? '/passenger/login'
+      return to.meta.authRedirect ?? DEFAULT_AUTH_REDIRECT
 
-    if (to.meta.guestOnly && auth.isAuthenticated && canAccessRole(auth.role, to.meta.guestOnlyRole))
-      return to.meta.guestRedirect ?? '/'
+    if (to.meta.guestOnly && auth.isAuthenticated && canAccessRole(auth.roles, to.meta.guestOnlyRole))
+      return to.meta.guestRedirect ?? auth.homePath
 
     if (to.meta.requiresAuth && !auth.isAuthenticated)
-      return to.meta.authRedirect ?? '/passenger/login'
+      return to.meta.authRedirect ?? DEFAULT_AUTH_REDIRECT
 
-    if (to.meta.requiredRole && !canAccessRole(auth.role, to.meta.requiredRole))
-      return to.meta.roleRedirect ?? to.meta.authRedirect ?? '/'
+    if (to.meta.requiredRole && !canAccessRole(auth.roles, to.meta.requiredRole))
+      return to.meta.roleRedirect ?? auth.homePath
   })
 }

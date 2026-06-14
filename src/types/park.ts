@@ -1,5 +1,3 @@
-import type { DriverProfile } from '~/types/driver'
-
 export interface TaxiPark {
   bin: string
   commission_rate: number
@@ -13,9 +11,11 @@ export interface TaxiPark {
 }
 
 export interface TaxiParkRegisterPayload {
-  bin?: string
   name: string
-  phone?: string
+  description: string
+  bin: string
+  phone: string
+  commission_rate: number
 }
 
 export interface TaxiParkUpdatePayload {
@@ -36,18 +36,22 @@ export interface ParkInvitesResponse {
   invites: ParkInvite[]
 }
 
+export interface ParkDriver {
+  id: string
+  is_online: boolean
+  rating: number
+  total_trips: number
+  user_id: string
+}
+
 export interface ParkDriversResponse {
-  drivers: Pick<DriverProfile, 'id' | 'is_online' | 'rating' | 'total_trips' | 'user_id'>[]
+  drivers: ParkDriver[]
 }
 
 export interface ParkAnalytics {
   driver_count: number
   total_revenue: number
   trip_count: number
-}
-
-export interface DriverAcceptInvitePayload {
-  token: string
 }
 
 export interface AdminParksResponse {

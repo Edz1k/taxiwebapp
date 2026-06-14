@@ -1,6 +1,6 @@
 import type { AuthRole, AuthSession } from '~/types/auth'
 import { acceptHMRUpdate, defineStore } from 'pinia'
-import { getAuthSession, logout as logoutRequest, sendOtp, telegramDriverAuth, telegramPassengerAuth, verifyOtp } from '~/api/auth'
+import { getAuthSession, logout as logoutRequest, sendOtp, verifyOtp } from '~/api/auth'
 import { ApiError } from '~/api/client'
 import { showErrorToast } from '~/api/errors'
 import {
@@ -15,47 +15,43 @@ import {
 } from '~/composables/auth/session'
 
 let isListeningSessionChanges = false
-const ROLE_PRIORITY: AuthRole[] = ['passenger', 'driver', 'admin', 'superadmin', 'tech_support', 'park']
+const WEB_ROLE_HOME: Partial<Record<AuthRole, string>> = {
+  superadmin: '/admin',
+  admin: '/admin',
+  tech_support: '/support',
+  park: '/park',
+}
+const WEB_HOME_PRIORITY: AuthRole[] = ['superadmin', 'admin', 'tech_support', 'park']
 
 export const useAuthStore = defineStore('auth', () => {
   const currentUser = ref<AuthSession | null>(null)
   const pendingPhone = ref('')
-  const driverPhoneVerified = ref<boolean | null>(null)
   const isLoading = ref(false)
   const errorMessage = ref('')
   const sessionStatus = ref<'authenticated' | 'guest' | 'unknown'>('unknown')
 
   const isAuthenticated = computed(() => Boolean(currentUser.value))
-  const role = computed<AuthRole | null>(() => currentUser.value?.role ?? null)
+  const roles = computed<AuthRole[]>(() => currentUser.value?.roles ?? [])
+  const homePath = computed(() => {
+    for (const role of WEB_HOME_PRIORITY) {
+      if (!roles.value.includes(role))
+        continue
 
-  function isAuthRole(role: string): role is AuthRole {
-    return ROLE_PRIORITY.includes(role as AuthRole)
-  }
+      const path = WEB_ROLE_HOME[role]
 
-  function pickSessionRole(sessionRoles: AuthRole[], preferredRole?: AuthRole | null) {
-    if (preferredRole && sessionRoles.includes(preferredRole))
-      return preferredRole
-
-    return ROLE_PRIORITY.find(role => sessionRoles.includes(role)) ?? null
-  }
-
-  function normalizeSession(session: AuthSession, preferredRole?: AuthRole | null): AuthSession | null {
-    const rawRoles = session.roles?.length
-      ? session.roles
-      : session.role
-        ? [session.role]
-        : []
-    const sessionRoles = Array.from(new Set(rawRoles.filter(isAuthRole)))
-    const nextRole = pickSessionRole(sessionRoles, preferredRole)
-
-    if (!nextRole)
-      return null
-
-    return {
-      ...session,
-      role: nextRole,
-      roles: sessionRoles,
+      if (path)
+        return path
     }
+
+    return '/'
+  })
+
+  function hasRole(role: AuthRole) {
+    return roles.value.includes(role)
+  }
+
+  function hasAnyRole(requiredRoles: AuthRole[]) {
+    return requiredRoles.some(role => hasRole(role))
   }
 
   function syncSession() {
@@ -94,13 +90,12 @@ export const useAuthStore = defineStore('auth', () => {
     currentUser.value = null
     pendingPhone.value = ''
     errorMessage.value = ''
-    driverPhoneVerified.value = null
     sessionStatus.value = 'guest'
     clearTokenPair()
     clearPendingPhone()
   }
 
-  async function restoreSession(options: { force?: boolean, preferredRole?: AuthRole } = {}) {
+  async function restoreSession(options: { force?: boolean } = {}) {
     syncSession()
     listenSessionChanges()
 
@@ -108,10 +103,9 @@ export const useAuthStore = defineStore('auth', () => {
       return currentUser.value
 
     try {
-      const session = normalizeSession(await getAuthSession(), options.preferredRole)
-      currentUser.value = session
-      sessionStatus.value = session ? 'authenticated' : 'guest'
-      return session
+      currentUser.value = await getAuthSession()
+      sessionStatus.value = 'authenticated'
+      return currentUser.value
     }
     catch (error) {
       currentUser.value = null
@@ -135,7 +129,7 @@ export const useAuthStore = defineStore('auth', () => {
     return fingerprint
   }
 
-  async function requestPassengerOtp(phone: string) {
+  async function requestOtp(phone: string) {
     isLoading.value = true
     errorMessage.value = ''
 
@@ -152,7 +146,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function confirmPassengerOtp(code: string) {
+  async function confirmOtp(code: string) {
     if (!pendingPhone.value)
       throw new Error('Missing pending phone')
 
@@ -166,59 +160,11 @@ export const useAuthStore = defineStore('auth', () => {
         deviceFingerprint: getDeviceFingerprint(),
       })
 
-      driverPhoneVerified.value = null
       completeLogin()
-      await restoreSession({ force: true, preferredRole: 'passenger' })
+      await restoreSession({ force: true })
     }
     catch (error) {
       errorMessage.value = showErrorToast(error, 'Не удалось подтвердить код. Попробуйте еще раз.')
-      throw error
-    }
-    finally {
-      isLoading.value = false
-    }
-  }
-
-  async function signInPassengerWithTelegram(initData: string) {
-    isLoading.value = true
-    errorMessage.value = ''
-
-    try {
-      await telegramPassengerAuth({
-        initData,
-        deviceFingerprint: getDeviceFingerprint(),
-      })
-
-      driverPhoneVerified.value = null
-      completeLogin()
-      await restoreSession({ force: true, preferredRole: 'passenger' })
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось войти через Telegram.')
-      throw error
-    }
-    finally {
-      isLoading.value = false
-    }
-  }
-
-  async function signInDriverWithTelegram(initData: string) {
-    isLoading.value = true
-    errorMessage.value = ''
-
-    try {
-      const response = await telegramDriverAuth({
-        initData,
-        deviceFingerprint: getDeviceFingerprint(),
-      })
-
-      driverPhoneVerified.value = response.phone_verified
-      completeLogin()
-      await restoreSession({ force: true, preferredRole: 'driver' })
-      return response
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось войти как водитель через Telegram.')
       throw error
     }
     finally {
@@ -244,23 +190,23 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     clearSession,
-    confirmPassengerOtp,
+    confirmOtp,
     currentUser,
-    driverPhoneVerified,
     errorMessage,
     getDeviceFingerprint,
+    hasAnyRole,
+    hasRole,
+    homePath,
     isAuthenticated,
     isLoading,
     loadSession,
     logout,
     pendingPhone,
-    requestPassengerOtp,
+    requestOtp,
     restoreSession,
-    role,
+    roles,
     setPendingPhone,
     sessionStatus,
-    signInDriverWithTelegram,
-    signInPassengerWithTelegram,
   }
 })
 

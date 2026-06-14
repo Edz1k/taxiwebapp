@@ -1,14 +1,12 @@
 import type {
   AuthLoginResponse,
   AuthSession,
-  DriverTelegramAuthResponse,
   LogoutAllPayload,
   LogoutPayload,
   MessageResponse,
   RefreshTokenPayload,
   SendOtpPayload,
   SendOtpResponse,
-  TelegramAuthPayload,
   VerifyOtpPayload,
 } from '~/types/auth'
 import { apiRequest } from '~/api/client'
@@ -49,30 +47,6 @@ export function refreshToken(payload: RefreshTokenPayload = {}) {
 
 export function getAuthSession() {
   return apiRequest<AuthSession>('/auth/session')
-}
-
-export function telegramPassengerAuth(payload: TelegramAuthPayload) {
-  return apiRequest<AuthLoginResponse>('/auth/telegram/passenger', {
-    method: 'POST',
-    deviceFingerprint: payload.deviceFingerprint,
-    skipAuth: true,
-    skipAuthRefresh: true,
-    body: {
-      init_data: payload.initData,
-    },
-  })
-}
-
-export function telegramDriverAuth(payload: TelegramAuthPayload) {
-  return apiRequest<DriverTelegramAuthResponse>('/auth/telegram/driver', {
-    method: 'POST',
-    deviceFingerprint: payload.deviceFingerprint,
-    skipAuth: true,
-    skipAuthRefresh: true,
-    body: {
-      init_data: payload.initData,
-    },
-  })
 }
 
 export function logout(_payload: LogoutPayload = {}) {

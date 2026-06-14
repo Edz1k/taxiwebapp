@@ -5,9 +5,9 @@ const admin = useAdminStore()
 
 definePage({
   meta: {
-    authRedirect: '/passenger/login',
+    authRedirect: '/login',
     requiresAuth: true,
-    requiredRole: 'admin',
+    requiredRole: ['admin', 'superadmin'],
   },
 })
 

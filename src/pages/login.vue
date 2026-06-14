@@ -1,0 +1,88 @@
+<script setup lang="ts">
+import { isKazakhstanPhoneComplete, toKazakhstanE164 } from '~/composables/auth/phone'
+import { useAuthStore } from '~/stores/auth'
+
+const auth = useAuthStore()
+const router = useRouter()
+auth.loadSession()
+
+const phone = ref('')
+const code = ref('')
+const step = ref<'code' | 'phone'>(auth.pendingPhone ? 'code' : 'phone')
+
+definePage({
+  meta: {
+    guestOnly: true,
+  },
+})
+
+useHead({
+  title: 'Вход | EdTaxi',
+})
+
+const isPhoneStep = computed(() => step.value === 'phone')
+const canSubmit = computed(() => {
+  if (isPhoneStep.value)
+    return isKazakhstanPhoneComplete(phone.value)
+
+  return code.value.length === 6
+})
+
+async function submit() {
+  if (isPhoneStep.value) {
+    await auth.requestOtp(toKazakhstanE164(phone.value))
+    step.value = 'code'
+    return
+  }
+
+  await auth.confirmOtp(code.value)
+  await router.push(auth.homePath)
+}
+
+function editPhone() {
+  auth.setPendingPhone('')
+  code.value = ''
+  step.value = 'phone'
+}
+</script>
+
+<template>
+  <AuthScreen
+    description="Войдите по номеру телефона, чтобы открыть доступные разделы панели."
+    icon="i-mdi-shield-account"
+    title="Вход в EdTaxi"
+  >
+    <form class="mt-8 space-y-4" @submit.prevent="submit">
+      <PhoneInput v-if="isPhoneStep" v-model="phone" />
+
+      <div v-else class="space-y-4">
+        <div class="rounded-2xl bg-white/5 px-4 py-3">
+          <p class="text-xs text-slate-500 font-800 uppercase">
+            Код отправлен
+          </p>
+          <div class="mt-1 flex items-center justify-between gap-3">
+            <span class="text-sm text-slate-200 font-800">{{ auth.pendingPhone }}</span>
+            <button class="text-sm text-main-300 font-900" type="button" @click="editPhone">
+              Изменить
+            </button>
+          </div>
+        </div>
+
+        <OtpInput v-model="code" :shake="Boolean(auth.errorMessage)" />
+      </div>
+
+      <AuthError :message="auth.errorMessage" />
+
+      <AuthButton
+        :disabled="auth.isLoading || !canSubmit"
+        :loading="auth.isLoading"
+        :loading-text="isPhoneStep ? 'Отправляем...' : 'Проверяем...'"
+        :text="isPhoneStep ? 'Получить код' : 'Войти'"
+      />
+    </form>
+
+    <template #footer>
+      Доступ к панели определяется ролями аккаунта.
+    </template>
+  </AuthScreen>
+</template>

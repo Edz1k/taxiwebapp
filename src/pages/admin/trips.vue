@@ -17,9 +17,9 @@ const statuses: Array<{ label: string, value: TripStatus | '' }> = [
 
 definePage({
   meta: {
-    authRedirect: '/passenger/login',
+    authRedirect: '/login',
     requiresAuth: true,
-    requiredRole: 'admin',
+    requiredRole: ['admin', 'superadmin'],
   },
 })
 

@@ -27,7 +27,6 @@ const ERROR_MESSAGES: Record<string, string> = {
   'invalid or expired code': 'Код неверный или истёк. Запросите новый код.',
   'invalid or expired token': 'Сессия истекла. Войдите заново.',
   'invalid request body': 'Проверьте заполненные данные.',
-  'invalid telegram data': 'Не удалось проверить Telegram-вход. Откройте приложение заново.',
   'invalid token': 'Сессия истекла. Войдите заново.',
   'invalid trip id': 'Поездка не найдена.',
   'invalid trip status transition': 'Это действие сейчас недоступно для текущего статуса поездки.',
