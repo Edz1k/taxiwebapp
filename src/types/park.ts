@@ -12,10 +12,10 @@ export interface TaxiPark {
 
 export interface TaxiParkRegisterPayload {
   name: string
-  description: string
-  bin: string
-  phone: string
-  commission_rate: number
+  description?: string
+  bin?: string
+  phone?: string
+  commission_rate?: number
 }
 
 export interface TaxiParkUpdatePayload {
