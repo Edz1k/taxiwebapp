@@ -44,7 +44,7 @@ describe('auth store', () => {
     expect(auth.roles).toEqual(['admin', 'park'])
     expect(auth.hasRole('admin')).toBe(true)
     expect(auth.hasAnyRole(['tech_support', 'park'])).toBe(true)
-    expect(auth.homePath).toBe('/admin')
+    expect(auth.homePath).toBe('/dashboard')
     expect(auth.isAuthenticated).toBe(true)
     expect(auth.sessionStatus).toBe('authenticated')
     expect(getAuthSession).toHaveBeenCalledTimes(1)
@@ -62,7 +62,7 @@ describe('auth store', () => {
     expect(auth.currentUser?.roles).toEqual(['passenger', 'driver'])
     expect(auth.hasRole('driver')).toBe(true)
     expect(auth.hasRole('admin')).toBe(false)
-    expect(auth.homePath).toBe('/')
+    expect(auth.homePath).toBe('/dashboard')
   })
 
   it('treats 401 restore failures as guest state without throwing', async () => {

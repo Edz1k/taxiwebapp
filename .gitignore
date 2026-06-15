@@ -11,3 +11,5 @@ cypress/downloads
 public/assets/fonts
 .env
 .pnpm-store
+.agents
+skills-lock.json

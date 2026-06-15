@@ -2,8 +2,11 @@
   "type": "module",
   "private": true,
   "packageManager": "pnpm@10.30.2",
+  "engines": {
+    "node": ">=22.12.0 <23"
+  },
   "scripts": {
-    "build": "vite-ssg build",
+    "build": "CHOKIDAR_USEPOLLING=1 NODE_OPTIONS=--experimental-require-module vite-ssg build",
     "dev": "vite --port 3333 --open",
     "lint": "eslint .",
     "preview": "vite preview",
