@@ -11,6 +11,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AppSelectDropdown: typeof import('./components/app/AppSelectDropdown.vue')['default']
     AppToaster: typeof import('./components/app/AppToaster.vue')['default']
     AuthButton: typeof import('./components/auth/AuthButton.vue')['default']
     AuthError: typeof import('./components/auth/AuthError.vue')['default']
@@ -20,5 +21,6 @@ declare module 'vue' {
     PhoneInput: typeof import('./components/auth/PhoneInput.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    WebPageShell: typeof import('./components/app/WebPageShell.vue')['default']
   }
 }

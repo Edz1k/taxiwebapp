@@ -11,6 +11,13 @@ const roomId = computed(() => (route.params as Record<string, string>).id)
 const draft = ref('')
 const messagesEl = ref<HTMLElement | null>(null)
 
+const isAssigned = computed(() => {
+  const room = support.currentRoom
+  if (!room)
+    return false
+  return room.agent_id === auth.currentUser?.id
+})
+
 definePage({
   meta: {
     authRedirect: '/login',
@@ -70,13 +77,6 @@ async function send() {
   await support.sendMessage(roomId.value, content)
   scrollToBottom()
 }
-
-const isAssigned = computed(() => {
-  const room = support.currentRoom
-  if (!room)
-    return false
-  return room.agent_id === auth.currentUser?.id
-})
 
 const isClosed = computed(() => support.currentRoom?.status === 'closed')
 </script>

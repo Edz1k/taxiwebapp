@@ -15,13 +15,6 @@ import {
 } from '~/composables/auth/session'
 
 let isListeningSessionChanges = false
-const WEB_ROLE_HOME: Partial<Record<AuthRole, string>> = {
-  superadmin: '/admin',
-  admin: '/admin',
-  tech_support: '/support',
-  park: '/park',
-}
-const WEB_HOME_PRIORITY: AuthRole[] = ['superadmin', 'admin', 'tech_support', 'park']
 
 export const useAuthStore = defineStore('auth', () => {
   const currentUser = ref<AuthSession | null>(null)
@@ -32,19 +25,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => Boolean(currentUser.value))
   const roles = computed<AuthRole[]>(() => currentUser.value?.roles ?? [])
-  const homePath = computed(() => {
-    for (const role of WEB_HOME_PRIORITY) {
-      if (!roles.value.includes(role))
-        continue
-
-      const path = WEB_ROLE_HOME[role]
-
-      if (path)
-        return path
-    }
-
-    return '/'
-  })
+  const homePath = computed(() => isAuthenticated.value ? '/dashboard' : '/')
 
   function hasRole(role: AuthRole) {
     return roles.value.includes(role)
