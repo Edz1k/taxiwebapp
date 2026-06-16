@@ -15,6 +15,7 @@ declare module 'vue' {
     AppToaster: typeof import('./components/app/AppToaster.vue')['default']
     AuthButton: typeof import('./components/auth/AuthButton.vue')['default']
     AuthError: typeof import('./components/auth/AuthError.vue')['default']
+    AuthLoginForm: typeof import('./components/auth/AuthLoginForm.vue')['default']
     AuthScreen: typeof import('./components/auth/AuthScreen.vue')['default']
     NavigationComponent: typeof import('./components/NavigationComponent.vue')['default']
     OtpInput: typeof import('./components/auth/OtpInput.vue')['default']

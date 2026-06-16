@@ -2,12 +2,12 @@ import type { SupportListRoomsParams, SupportMessage, SupportRoom } from '~/type
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { showErrorToast } from '~/api/errors'
 import {
-  assignAdminSupportRoom,
-  closeAdminSupportRoom,
-  getAdminSupportMessages,
-  getAdminSupportRoom,
-  listAdminSupportRooms,
-  sendAdminSupportMessage,
+  assignTechSupportRoom,
+  getTechSupportMessages,
+  getTechSupportRoom,
+  listTechSupportRooms,
+  requestCloseTechSupportRoom,
+  sendTechSupportMessage,
 } from '~/api/support'
 
 export const useSupportStore = defineStore('support', () => {
@@ -25,7 +25,7 @@ export const useSupportStore = defineStore('support', () => {
     errorMessage.value = ''
 
     try {
-      const response = await listAdminSupportRooms(params)
+      const response = await listTechSupportRooms(params)
       rooms.value = response.rooms
       return response
     }
@@ -43,7 +43,7 @@ export const useSupportStore = defineStore('support', () => {
     errorMessage.value = ''
 
     try {
-      currentRoom.value = await getAdminSupportRoom(id)
+      currentRoom.value = await getTechSupportRoom(id)
       return currentRoom.value
     }
     catch (error) {
@@ -60,7 +60,7 @@ export const useSupportStore = defineStore('support', () => {
     errorMessage.value = ''
 
     try {
-      const response = await getAdminSupportMessages(id, { limit: 100 })
+      const response = await getTechSupportMessages(id, { limit: 100 })
       messages.value = response.messages ?? []
       return response
     }
@@ -75,14 +75,15 @@ export const useSupportStore = defineStore('support', () => {
 
   async function sendMessage(id: string, content: string) {
     isSending.value = true
+    errorMessage.value = ''
 
     try {
-      const msg = await sendAdminSupportMessage(id, content)
+      const msg = await sendTechSupportMessage(id, content)
       messages.value = [...messages.value, msg]
       return msg
     }
     catch (error) {
-      showErrorToast(error, 'Не удалось отправить сообщение.')
+      errorMessage.value = showErrorToast(error, 'Не удалось отправить сообщение.')
       throw error
     }
     finally {
@@ -95,7 +96,7 @@ export const useSupportStore = defineStore('support', () => {
     errorMessage.value = ''
 
     try {
-      await assignAdminSupportRoom(room.id)
+      await assignTechSupportRoom(room.id)
       room.agent_id = room.agent_id ?? 'assigned'
     }
     catch (error) {
@@ -112,10 +113,10 @@ export const useSupportStore = defineStore('support', () => {
     errorMessage.value = ''
 
     try {
-      await closeAdminSupportRoom(room.id)
-      room.status = 'closed'
+      await requestCloseTechSupportRoom(room.id)
+      room.status = 'pending_close'
       if (currentRoom.value?.id === room.id)
-        currentRoom.value.status = 'closed'
+        currentRoom.value.status = 'pending_close'
     }
     catch (error) {
       errorMessage.value = showErrorToast(error, 'Не удалось закрыть обращение.')
@@ -126,9 +127,21 @@ export const useSupportStore = defineStore('support', () => {
     }
   }
 
+  function clearSupportState() {
+    rooms.value = []
+    currentRoom.value = null
+    messages.value = []
+    isLoading.value = false
+    isLoadingMessages.value = false
+    isMutating.value = false
+    isSending.value = false
+    errorMessage.value = ''
+  }
+
   return {
     assignRoom,
     closeRoom,
+    clearSupportState,
     currentRoom,
     errorMessage,
     isLoading,

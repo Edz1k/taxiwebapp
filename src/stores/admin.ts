@@ -1,8 +1,8 @@
-import type { AdminAssignableRole, AdminListTripsParams, AdminListUsersParams, AdminUser, CreateParkOwnerPayload } from '~/types/admin'
+import type { AdminAssignableRole, AdminListTripsParams, AdminListUsersParams, AdminTechSupportNumber, AdminUser, CreateParkOwnerPayload } from '~/types/admin'
 import type { ParkChatRoom, TaxiPark } from '~/types/park'
 import type { Trip } from '~/types/trips'
 import { acceptHMRUpdate, defineStore } from 'pinia'
-import { addAdminUserRole, blockAdminUser, createParkOwner as createParkOwnerApi, getAdminTrip, listAdminTrips, listAdminUsers, removeAdminUserRole } from '~/api/admin'
+import { addAdminUserRole, addTechSupportNumber as addTechSupportNumberApi, blockAdminUser, createParkOwner as createParkOwnerApi, getAdminTrip, listAdminTrips, listAdminUsers, listTechSupportNumbers, removeAdminUserRole, removeTechSupportNumber as removeTechSupportNumberApi } from '~/api/admin'
 import { showErrorToast } from '~/api/errors'
 import { listAdminParkChats, listAdminParks, rejectAdminPark, verifyAdminPark } from '~/api/park'
 
@@ -11,6 +11,7 @@ export const useAdminStore = defineStore('admin', () => {
   const trips = ref<Trip[]>([])
   const parks = ref<TaxiPark[]>([])
   const parkChats = ref<ParkChatRoom[]>([])
+  const techSupportNumbers = ref<AdminTechSupportNumber[]>([])
   const selectedTrip = ref<Trip | null>(null)
   const usersTotal = ref(0)
   const tripsTotal = ref(0)
@@ -18,6 +19,7 @@ export const useAdminStore = defineStore('admin', () => {
   const isLoadingTrips = ref(false)
   const isLoadingParks = ref(false)
   const isLoadingParkChats = ref(false)
+  const isLoadingTechSupportNumbers = ref(false)
   const isMutating = ref(false)
   const errorMessage = ref('')
 
@@ -213,28 +215,110 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
+  async function loadTechSupportNumbers() {
+    isLoadingTechSupportNumbers.value = true
+    errorMessage.value = ''
+
+    try {
+      const response = await listTechSupportNumbers()
+      techSupportNumbers.value = response.numbers
+      return response
+    }
+    catch (error) {
+      errorMessage.value = showErrorToast(error, 'Не удалось загрузить номера техподдержки.')
+      throw error
+    }
+    finally {
+      isLoadingTechSupportNumbers.value = false
+    }
+  }
+
+  async function addTechSupportNumber(phone: string) {
+    isMutating.value = true
+    errorMessage.value = ''
+
+    try {
+      const response = await addTechSupportNumberApi({ phone })
+      if (!techSupportNumbers.value.some(item => item.phone === response.phone)) {
+        techSupportNumbers.value = [
+          { added_by: null, created_at: new Date().toISOString(), phone: response.phone },
+          ...techSupportNumbers.value,
+        ]
+      }
+      return response
+    }
+    catch (error) {
+      errorMessage.value = showErrorToast(error, 'Не удалось добавить номер техподдержки.')
+      throw error
+    }
+    finally {
+      isMutating.value = false
+    }
+  }
+
+  async function removeTechSupportNumber(phone: string) {
+    isMutating.value = true
+    errorMessage.value = ''
+
+    try {
+      await removeTechSupportNumberApi({ phone })
+      techSupportNumbers.value = techSupportNumbers.value.filter(item => item.phone !== phone)
+    }
+    catch (error) {
+      errorMessage.value = showErrorToast(error, 'Не удалось удалить номер техподдержки.')
+      throw error
+    }
+    finally {
+      isMutating.value = false
+    }
+  }
+
+  function clearAdminState() {
+    users.value = []
+    trips.value = []
+    parks.value = []
+    parkChats.value = []
+    techSupportNumbers.value = []
+    selectedTrip.value = null
+    usersTotal.value = 0
+    tripsTotal.value = 0
+    isLoadingUsers.value = false
+    isLoadingTrips.value = false
+    isLoadingParks.value = false
+    isLoadingParkChats.value = false
+    isLoadingTechSupportNumbers.value = false
+    isMutating.value = false
+    errorMessage.value = ''
+  }
+
   return {
+    addTechSupportNumber,
+    clearAdminState,
     errorMessage,
     isLoadingTrips,
     isLoadingParks,
     isLoadingParkChats,
+    isLoadingTechSupportNumbers,
     isLoadingUsers,
     isMutating,
     createParkOwner,
     grantUserRole,
     loadParkChats,
     loadParks,
+    loadTechSupportNumbers,
     loadTrip,
     loadTrips,
     loadUsers,
     parkChats,
     parks,
     rejectPark,
+    removeTechSupportNumber,
     revokeUserRole,
     selectedTrip,
     setUserBlocked,
     trips,
     tripsTotal,
+    techSupportNumbers,
     users,
     usersTotal,
     verifyPark,

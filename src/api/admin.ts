@@ -1,10 +1,12 @@
 import type {
   AdminBlockUserPayload,
   AdminBlockUserResponse,
+  AdminListTechSupportNumbersResponse,
   AdminListTripsParams,
   AdminListTripsResponse,
   AdminListUsersParams,
   AdminListUsersResponse,
+  AdminTechSupportNumberPayload,
   AdminUpdateUserRolesPayload,
   AdminUpdateUserRolesResponse,
   CreateParkOwnerPayload,
@@ -61,6 +63,24 @@ export function getAdminTrip(id: string) {
 export function createParkOwner(payload: CreateParkOwnerPayload) {
   return apiRequest<CreateParkOwnerResponse>('/admin/park-owners', {
     method: 'POST',
+    body: payload,
+  })
+}
+
+export function listTechSupportNumbers() {
+  return apiRequest<AdminListTechSupportNumbersResponse>('/admin/tech-support-numbers')
+}
+
+export function addTechSupportNumber(payload: AdminTechSupportNumberPayload) {
+  return apiRequest<AdminTechSupportNumberPayload>('/admin/tech-support-numbers', {
+    method: 'POST',
+    body: payload,
+  })
+}
+
+export function removeTechSupportNumber(payload: AdminTechSupportNumberPayload) {
+  return apiRequest<{ message: string }>('/admin/tech-support-numbers', {
+    method: 'DELETE',
     body: payload,
   })
 }

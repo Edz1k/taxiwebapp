@@ -3,9 +3,11 @@ export interface MessageResponse {
 }
 
 export type AuthRole = 'admin' | 'driver' | 'park' | 'passenger' | 'superadmin' | 'tech_support'
+export type AuthLoginFlow = 'admin' | 'park' | 'tech_support'
 
 export interface AuthLoginResponse {
-  roles: AuthRole[]
+  phone_verified?: boolean
+  role: AuthRole
 }
 
 export interface AuthSession {

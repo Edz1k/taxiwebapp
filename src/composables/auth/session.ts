@@ -2,8 +2,11 @@ const OBSOLETE_ACCESS_TOKEN_KEY = 'taxiapp_access_token'
 const OBSOLETE_REFRESH_TOKEN_KEY = 'taxiapp_refresh_token'
 const OBSOLETE_ACTIVE_ROLE_KEY = 'taxiapp_active_role'
 const PHONE_KEY = 'taxiwebapp_pending_phone'
+const FLOW_KEY = 'taxiwebapp_pending_auth_flow'
 const DEVICE_FP_KEY = 'taxiwebapp_device_fp'
 export const AUTH_SESSION_CHANGED_EVENT = 'taxiwebapp:auth-session-changed'
+
+type StoredAuthFlow = 'admin' | 'park' | 'tech_support'
 
 function canUseStorage() {
   return typeof window !== 'undefined'
@@ -41,6 +44,15 @@ export function readPendingPhone() {
   return sessionStorage.getItem(PHONE_KEY) ?? ''
 }
 
+export function readPendingAuthFlow(): StoredAuthFlow {
+  if (!canUseStorage())
+    return 'admin'
+
+  const value = sessionStorage.getItem(FLOW_KEY)
+
+  return value === 'park' || value === 'tech_support' ? value : 'admin'
+}
+
 export function savePendingPhone(phone: string) {
   if (!canUseStorage())
     return
@@ -48,11 +60,19 @@ export function savePendingPhone(phone: string) {
   sessionStorage.setItem(PHONE_KEY, phone)
 }
 
+export function savePendingAuthFlow(flow: StoredAuthFlow) {
+  if (!canUseStorage())
+    return
+
+  sessionStorage.setItem(FLOW_KEY, flow)
+}
+
 export function clearPendingPhone() {
   if (!canUseStorage())
     return
 
   sessionStorage.removeItem(PHONE_KEY)
+  sessionStorage.removeItem(FLOW_KEY)
 }
 
 export function readDeviceFingerprint() {

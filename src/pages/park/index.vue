@@ -6,7 +6,7 @@ const parkStore = useParkStore()
 
 definePage({
   meta: {
-    authRedirect: '/login',
+    authRedirect: '/park/login',
     requiresAuth: true,
     requiredRole: ['park', 'admin', 'superadmin'],
   },

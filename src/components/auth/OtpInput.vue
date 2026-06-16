@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { PinInputInput, PinInputRoot } from 'reka-ui'
+import { useId } from 'vue'
 
 defineProps<{
   shake?: boolean
 }>()
 
 const model = defineModel<string>({ required: true })
+const labelId = useId()
 
 const digits = computed<string[]>({
   get: () => Array.from({ length: 6 }, (_, index) => model.value[index] ?? ''),
@@ -15,12 +17,13 @@ const digits = computed<string[]>({
 
 <template>
   <div>
-    <label class="mb-3 block text-sm text-slate-300 font-600">
+    <label :id="labelId" class="mb-3 block text-sm text-slate-300 font-600">
       Код подтверждения
     </label>
 
     <PinInputRoot
       v-model="digits"
+      :aria-labelledby="labelId"
       class="flex justify-between gap-2"
       :class="{ 'animate-otp-shake': shake }"
       otp
@@ -32,6 +35,7 @@ const digits = computed<string[]>({
         class="h-16 min-w-0 flex flex-1 items-center justify-center border rounded-2xl bg-white/5 text-center text-2xl text-white font-800 outline-none transition focus:border-main-400 focus:bg-main-500/10 placeholder:text-slate-500 focus:ring-2 focus:ring-main-400/40"
         inputmode="numeric"
         :index="index"
+        :name="index === 0 ? 'otp' : undefined"
         placeholder="•"
       />
     </PinInputRoot>

@@ -33,8 +33,6 @@ const roles: Array<{ label: string, value: AdminUserRole | '' }> = [
 
 const assignableRoles = computed<Array<{ label: string, value: AdminAssignableRole }>>(() => {
   const base: Array<{ label: string, value: AdminAssignableRole }> = [
-    { label: 'Поддержка', value: 'tech_support' },
-    { label: 'Таксопарк', value: 'park' },
     { label: 'Пассажир', value: 'passenger' },
     { label: 'Водитель', value: 'driver' },
   ]
@@ -112,7 +110,7 @@ function toggleRole(user: AdminUser, role: AdminAssignableRole) {
   <WebPageShell
     back-label="Админка"
     back-to="/admin"
-    description="Назначайте роли через меню. Роль admin доступна только суперадмину."
+    description="Назначайте базовые роли через меню. Таксопарки и техподдержка подключаются через отдельные процессы."
     title="Пользователи"
   >
     <template #actions>
@@ -202,7 +200,7 @@ function toggleRole(user: AdminUser, role: AdminAssignableRole) {
 
                 <DropdownMenuSeparator class="my-1 h-px bg-white/10" />
                 <DropdownMenuLabel class="px-3 py-2 text-[11px] text-white/38 leading-4">
-                  Последнюю роль пользователя снять нельзя.
+                  Последнюю роль пользователя снять нельзя. Таксопарки и техподдержка не назначаются из этого меню.
                 </DropdownMenuLabel>
               </DropdownMenuContent>
             </DropdownMenuPortal>

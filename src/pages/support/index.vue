@@ -1,17 +1,31 @@
 <script setup lang="ts">
-import type { SupportRoomStatus } from '~/types/support'
+import type { SupportParticipantType, SupportRoomStatus } from '~/types/support'
 import AppSelectDropdown from '~/components/app/AppSelectDropdown.vue'
 import WebPageShell from '~/components/app/WebPageShell.vue'
 import { useSupportStore } from '~/stores/support'
 
 const support = useSupportStore()
+const participantType = ref<SupportParticipantType>('passenger')
 const status = ref<SupportRoomStatus | ''>('open')
 
 const statuses: Array<{ label: string, value: SupportRoomStatus | '' }> = [
   { label: 'Все', value: '' },
   { label: 'Открытые', value: 'open' },
+  { label: 'На закрытии', value: 'pending_close' },
   { label: 'Закрытые', value: 'closed' },
 ]
+
+const participantTypes: Array<{ label: string, value: SupportParticipantType }> = [
+  { label: 'Пассажиры', value: 'passenger' },
+  { label: 'Водители', value: 'driver' },
+]
+
+const participantFilter = computed({
+  get: () => participantType.value,
+  set: (value) => {
+    participantType.value = value as SupportParticipantType
+  },
+})
 
 const statusFilter = computed({
   get: () => status.value,
@@ -22,7 +36,7 @@ const statusFilter = computed({
 
 definePage({
   meta: {
-    authRedirect: '/login',
+    authRedirect: '/support/login',
     requiresAuth: true,
     requiredRole: ['admin', 'superadmin', 'tech_support'],
   },
@@ -33,11 +47,11 @@ useHead({
 })
 
 onMounted(() => {
-  support.loadRooms({ status: status.value }).catch(() => {})
+  support.loadRooms({ participant_type: participantType.value, status: status.value }).catch(() => {})
 })
 
-watch(status, () => {
-  support.loadRooms({ status: status.value }).catch(() => {})
+watch([participantType, status], () => {
+  support.loadRooms({ participant_type: participantType.value, status: status.value }).catch(() => {})
 })
 
 function formatDate(value: string) {
@@ -47,6 +61,30 @@ function formatDate(value: string) {
     minute: '2-digit',
     month: 'short',
   }).format(new Date(value))
+}
+
+function participantLabel(value: SupportParticipantType) {
+  return participantTypes.find(item => item.value === value)?.label ?? value
+}
+
+function statusLabel(value: SupportRoomStatus) {
+  const labels: Record<SupportRoomStatus, string> = {
+    closed: 'Закрыто',
+    open: 'Открыто',
+    pending_close: 'На закрытии',
+  }
+
+  return labels[value]
+}
+
+function statusClass(value: SupportRoomStatus) {
+  if (value === 'open')
+    return 'bg-emerald-500/12 text-emerald-300 md:bg-transparent'
+
+  if (value === 'pending_close')
+    return 'bg-amber-500/12 text-amber-300 md:bg-transparent'
+
+  return 'bg-white/8 text-white/45 md:bg-transparent'
 }
 </script>
 
@@ -58,12 +96,14 @@ function formatDate(value: string) {
     title="Поддержка"
   >
     <template #actions>
+      <AppSelectDropdown v-model="participantFilter" label="Тип" :options="participantTypes" />
       <AppSelectDropdown v-model="statusFilter" label="Статус" :options="statuses" />
     </template>
 
     <div class="mt-5 overflow-hidden border border-white/10 rounded-3xl bg-white/8 backdrop-blur">
-      <div class="grid-cols-[minmax(180px,1fr)_120px_150px_300px] hidden gap-3 border-b border-white/8 px-4 py-3 text-xs text-white/42 font-900 uppercase md:grid">
+      <div class="grid-cols-[minmax(180px,1fr)_120px_120px_150px_300px] hidden gap-3 border-b border-white/8 px-4 py-3 text-xs text-white/42 font-900 uppercase md:grid">
         <span>Обращение</span>
+        <span>Тип</span>
         <span>Статус</span>
         <span>Обновлено</span>
         <span class="text-right">Действия</span>
@@ -81,7 +121,7 @@ function formatDate(value: string) {
         v-for="room in support.rooms"
         v-else
         :key="room.id"
-        class="grid gap-3 border-b border-white/6 px-4 py-4 md:grid-cols-[minmax(180px,1fr)_120px_150px_300px] md:items-center last:border-b-0"
+        class="grid gap-3 border-b border-white/6 px-4 py-4 md:grid-cols-[minmax(180px,1fr)_120px_120px_150px_300px] md:items-center last:border-b-0"
       >
         <div class="min-w-0">
           <p class="truncate text-sm font-900">
@@ -92,11 +132,13 @@ function formatDate(value: string) {
           </p>
         </div>
 
+        <span class="text-sm text-white/58 font-800">{{ participantLabel(room.participant_type) }}</span>
+
         <span
           class="w-fit rounded-full px-3 py-1.5 text-xs font-900 md:w-auto md:rounded-none md:px-0 md:py-0 md:text-sm"
-          :class="room.status === 'open' ? 'bg-emerald-500/12 text-emerald-300 md:bg-transparent' : 'bg-white/8 text-white/45 md:bg-transparent'"
+          :class="statusClass(room.status)"
         >
-          {{ room.status === 'open' ? 'Открыто' : 'Закрыто' }}
+          {{ statusLabel(room.status) }}
         </span>
         <span class="text-sm text-white/50 font-800">{{ formatDate(room.updated_at) }}</span>
 
@@ -108,7 +150,7 @@ function formatDate(value: string) {
             Открыть
           </RouterLink>
           <button
-            :disabled="support.isMutating || room.status === 'closed'"
+            :disabled="support.isMutating || room.status !== 'open'"
             class="h-10 rounded-xl bg-white/8 px-3 text-sm font-900 transition active:scale-[0.98] disabled:opacity-50"
             type="button"
             @click="support.assignRoom(room)"
@@ -116,12 +158,12 @@ function formatDate(value: string) {
             Назначить
           </button>
           <button
-            :disabled="support.isMutating || room.status === 'closed'"
+            :disabled="support.isMutating || room.status !== 'open'"
             class="h-10 rounded-xl bg-red-500/12 px-3 text-sm text-red-300 font-900 transition active:scale-[0.98] disabled:opacity-50"
             type="button"
             @click="support.closeRoom(room)"
           >
-            Закрыть
+            Запросить закрытие
           </button>
         </div>
       </div>

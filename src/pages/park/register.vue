@@ -1,16 +1,29 @@
 <script setup lang="ts">
 import type { TaxiParkRegisterPayload } from '~/types/park'
-import { registerPark } from '~/api/park'
+import { useId } from 'vue'
+import { useToast } from '~/composables/useToast'
+import { useParkStore } from '~/stores/park'
 
-const payload = ref<TaxiParkRegisterPayload>({
+const router = useRouter()
+const toast = useToast()
+const parkStore = useParkStore()
+
+const fieldIds = {
+  bin: useId(),
+  commission: useId(),
+  description: useId(),
+  name: useId(),
+  phone: useId(),
+}
+
+const form = ref({
   name: '',
   description: '',
   bin: '',
   phone: '',
-  commission_rate: 0,
 })
 
-const isLoading = ref(false)
+const commissionPercent = ref(0)
 
 const benefits = [
   {
@@ -35,26 +48,46 @@ const benefits = [
   },
 ]
 
+definePage({
+  meta: {
+    authRedirect: '/park/login',
+    requiresAuth: true,
+    requiredRole: ['park', 'admin', 'superadmin'],
+  },
+})
+
+useHead({
+  title: 'Регистрация таксопарка | EdTaxi',
+})
+
+function optionalField(value: string) {
+  const trimmed = value.trim()
+  return trimmed || undefined
+}
+
+function resetForm() {
+  form.value = {
+    name: '',
+    description: '',
+    bin: '',
+    phone: '',
+  }
+  commissionPercent.value = 0
+}
+
 async function handleSubmit() {
-  try {
-    isLoading.value = true
+  const payload: TaxiParkRegisterPayload = {
+    name: form.value.name.trim(),
+    description: optionalField(form.value.description),
+    bin: optionalField(form.value.bin),
+    phone: optionalField(form.value.phone),
+    commission_rate: Number((commissionPercent.value / 100).toFixed(4)),
+  }
 
-    await registerPark(payload.value)
-
-    payload.value = {
-      name: '',
-      description: '',
-      bin: '',
-      phone: '',
-      commission_rate: 0,
-    }
-  }
-  catch (error) {
-    console.error(error)
-  }
-  finally {
-    isLoading.value = false
-  }
+  await parkStore.register(payload)
+  toast.success('Заявка отправлена', 'Таксопарк появится в кабинете после проверки.')
+  resetForm()
+  await router.push('/park')
 }
 </script>
 
@@ -126,64 +159,80 @@ async function handleSubmit() {
             @submit.prevent="handleSubmit"
           >
             <div>
-              <label class="mb-2 block text-sm text-white/60">
+              <label :for="fieldIds.name" class="mb-2 block text-sm text-white/60">
                 Название парка
               </label>
 
               <input
-                v-model="payload.name"
+                :id="fieldIds.name"
+                v-model="form.name"
                 type="text"
+                name="park_name"
                 placeholder="Например: Taxi Group Almaty"
+                required
                 class="w-full border border-white/10 rounded-2xl bg-white/5 px-4 py-3 outline-none transition focus:border-cyan-400"
               >
             </div>
 
             <div>
-              <label class="mb-2 block text-sm text-white/60">
+              <label :for="fieldIds.bin" class="mb-2 block text-sm text-white/60">
                 БИН
               </label>
 
               <input
-                v-model="payload.bin"
+                :id="fieldIds.bin"
+                v-model="form.bin"
                 type="text"
+                name="park_bin"
                 placeholder="123456789012"
                 class="w-full border border-white/10 rounded-2xl bg-white/5 px-4 py-3 outline-none transition focus:border-cyan-400"
               >
             </div>
 
             <div>
-              <label class="mb-2 block text-sm text-white/60">
+              <label :for="fieldIds.phone" class="mb-2 block text-sm text-white/60">
                 Телефон
               </label>
 
               <input
-                v-model="payload.phone"
-                type="text"
+                :id="fieldIds.phone"
+                v-model="form.phone"
+                type="tel"
+                autocomplete="tel"
+                name="park_phone"
                 placeholder="+7 (700) 000 00 00"
                 class="w-full border border-white/10 rounded-2xl bg-white/5 px-4 py-3 outline-none transition focus:border-cyan-400"
               >
             </div>
 
             <div>
-              <label class="mb-2 block text-sm text-white/60">
+              <label :for="fieldIds.commission" class="mb-2 block text-sm text-white/60">
                 Комиссия парка (%)
               </label>
 
               <input
-                v-model.number="payload.commission_rate"
+                :id="fieldIds.commission"
+                v-model.number="commissionPercent"
                 type="number"
-                placeholder="10"
+                inputmode="decimal"
+                max="3"
+                min="0"
+                name="park_commission_percent"
+                placeholder="3"
+                step="0.1"
                 class="w-full border border-white/10 rounded-2xl bg-white/5 px-4 py-3 outline-none transition focus:border-cyan-400"
               >
             </div>
 
             <div>
-              <label class="mb-2 block text-sm text-white/60">
+              <label :for="fieldIds.description" class="mb-2 block text-sm text-white/60">
                 Описание
               </label>
 
               <textarea
-                v-model="payload.description"
+                :id="fieldIds.description"
+                v-model="form.description"
+                name="park_description"
                 rows="4"
                 placeholder="Кратко расскажите о вашем парке..."
                 class="w-full border border-white/10 rounded-2xl bg-white/5 px-4 py-3 outline-none transition focus:border-cyan-400"
@@ -192,10 +241,10 @@ async function handleSubmit() {
 
             <button
               type="submit"
-              :disabled="isLoading"
+              :disabled="parkStore.isMutating"
               class="w-full rounded-2xl bg-cyan-500 px-6 py-4 text-black font-700 transition disabled:cursor-not-allowed hover:bg-cyan-400 disabled:opacity-60"
             >
-              <span v-if="isLoading">
+              <span v-if="parkStore.isMutating">
                 Регистрация...
               </span>
 

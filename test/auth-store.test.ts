@@ -2,7 +2,10 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getAuthSession, logout as logoutRequest, sendOtp, verifyOtp } from '~/api/auth'
 import { ApiError } from '~/api/client'
+import { useAdminStore } from '~/stores/admin'
 import { useAuthStore } from '~/stores/auth'
+import { useParkStore } from '~/stores/park'
+import { useSupportStore } from '~/stores/support'
 
 vi.mock('~/api/auth', () => ({
   getAuthSession: vi.fn(),
@@ -80,30 +83,43 @@ describe('auth store', () => {
 
   it('requests and confirms OTP through the web auth flow', async () => {
     vi.mocked(sendOtp).mockResolvedValue({ message: 'otp sent', phone: '+77771234567' })
-    vi.mocked(verifyOtp).mockResolvedValue({ roles: ['admin'] })
+    vi.mocked(verifyOtp).mockResolvedValue({ role: 'admin' })
     vi.mocked(getAuthSession).mockResolvedValue(adminSession)
     const auth = useAuthStore()
 
     await auth.requestOtp('+77771234567')
     await auth.confirmOtp('123456')
 
-    expect(sendOtp).toHaveBeenCalledWith({ phone: '+77771234567' })
-    expect(verifyOtp).toHaveBeenCalledWith({
-      code: '123456',
-      deviceFingerprint: expect.any(String),
-      phone: '+77771234567',
-    })
+    expect(sendOtp).toHaveBeenCalledWith({ phone: '+77771234567' }, 'admin')
+    expect(verifyOtp).toHaveBeenCalledWith(
+      {
+        code: '123456',
+        deviceFingerprint: expect.any(String),
+        phone: '+77771234567',
+      },
+      'admin',
+    )
     expect(auth.currentUser).toEqual(adminSession)
     expect(auth.pendingPhone).toBe('')
   })
 
   it('clears local auth state even when server logout fails', async () => {
     vi.mocked(logoutRequest).mockRejectedValue(new Error('network down'))
+    const admin = useAdminStore()
     const auth = useAuthStore()
+    const park = useParkStore()
+    const support = useSupportStore()
     auth.currentUser = adminSession
     auth.pendingPhone = '+77771234567'
     auth.errorMessage = 'old error'
     auth.sessionStatus = 'authenticated'
+    admin.users = [{ id: 'user-id' }] as any
+    admin.parks = [{ id: 'park-id' }] as any
+    admin.trips = [{ id: 'trip-id' }] as any
+    park.park = { id: 'park-id' } as any
+    park.drivers = [{ id: 'driver-id' }] as any
+    support.rooms = [{ id: 'room-id' }] as any
+    support.messages = [{ id: 'message-id' }] as any
 
     await auth.logout()
 
@@ -113,5 +129,12 @@ describe('auth store', () => {
     expect(auth.isAuthenticated).toBe(false)
     expect(auth.sessionStatus).toBe('guest')
     expect(auth.isLoading).toBe(false)
+    expect(admin.users).toEqual([])
+    expect(admin.parks).toEqual([])
+    expect(admin.trips).toEqual([])
+    expect(park.park).toBeNull()
+    expect(park.drivers).toEqual([])
+    expect(support.rooms).toEqual([])
+    expect(support.messages).toEqual([])
   })
 })

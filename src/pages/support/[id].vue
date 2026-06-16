@@ -18,9 +18,22 @@ const isAssigned = computed(() => {
   return room.agent_id === auth.currentUser?.id
 })
 
+const roomStatusLabel = computed(() => {
+  const status = support.currentRoom?.status
+
+  if (status === 'pending_close')
+    return 'На закрытии'
+
+  return status === 'closed' ? 'Закрыто' : 'Открыто'
+})
+
+const participantLabel = computed(() => {
+  return support.currentRoom?.participant_type === 'driver' ? 'Водитель' : 'Пассажир'
+})
+
 definePage({
   meta: {
-    authRedirect: '/login',
+    authRedirect: '/support/login',
     requiresAuth: true,
     requiredRole: ['admin', 'superadmin', 'tech_support'],
   },
@@ -78,7 +91,7 @@ async function send() {
   scrollToBottom()
 }
 
-const isClosed = computed(() => support.currentRoom?.status === 'closed')
+const isClosed = computed(() => support.currentRoom?.status !== 'open')
 </script>
 
 <template>
@@ -87,6 +100,7 @@ const isClosed = computed(() => support.currentRoom?.status === 'closed')
     <header class="shrink-0 border-b border-white/8 bg-secondary-900/95 px-4 py-3 backdrop-blur">
       <div class="mx-auto max-w-2xl flex items-center gap-3">
         <RouterLink
+          aria-label="Вернуться к списку обращений"
           class="h-9 w-9 flex items-center justify-center rounded-xl bg-white/6 text-slate-300 transition hover:bg-white/10"
           to="/support"
         >
@@ -96,11 +110,11 @@ const isClosed = computed(() => support.currentRoom?.status === 'closed')
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
             <div class="h-8 w-8 flex shrink-0 items-center justify-center rounded-full bg-main-500/20">
-              <span class="i-mdi-account text-4 text-main-300" />
+              <span :class="support.currentRoom?.participant_type === 'driver' ? 'i-mdi-steering' : 'i-mdi-account'" class="text-4 text-main-300" />
             </div>
             <div class="min-w-0">
               <p class="truncate text-sm font-900">
-                Пользователь
+                {{ participantLabel }}
               </p>
               <p class="truncate text-[11px] text-slate-500 font-700">
                 {{ support.currentRoom?.passenger_id ?? roomId }}
@@ -112,9 +126,9 @@ const isClosed = computed(() => support.currentRoom?.status === 'closed')
         <div class="flex shrink-0 items-center gap-2">
           <span
             class="rounded-xl px-2.5 py-1 text-xs font-900"
-            :class="isClosed ? 'bg-white/8 text-slate-400' : 'bg-emerald-500/15 text-emerald-300'"
+            :class="support.currentRoom?.status === 'open' ? 'bg-emerald-500/15 text-emerald-300' : support.currentRoom?.status === 'pending_close' ? 'bg-amber-500/15 text-amber-300' : 'bg-white/8 text-slate-400'"
           >
-            {{ isClosed ? 'Закрыто' : 'Открыто' }}
+            {{ roomStatusLabel }}
           </span>
 
           <button
@@ -133,7 +147,7 @@ const isClosed = computed(() => support.currentRoom?.status === 'closed')
             type="button"
             @click="support.currentRoom && support.closeRoom(support.currentRoom)"
           >
-            Закрыть чат
+            Запросить закрытие
           </button>
         </div>
       </div>
@@ -212,13 +226,16 @@ const isClosed = computed(() => support.currentRoom?.status === 'closed')
       <form class="mx-auto max-w-2xl flex items-end gap-2" @submit.prevent="send">
         <input
           v-model="draft"
+          aria-label="Ответ в чат поддержки"
           :disabled="isClosed || (!!support.currentRoom?.agent_id && !isAssigned)"
           class="h-12 min-w-0 flex-1 border border-white/10 rounded-2xl bg-white/6 px-4 text-sm outline-none transition focus:border-main-400/60 focus:bg-white/8 disabled:opacity-40"
           maxlength="2000"
-          :placeholder="isClosed ? 'Чат закрыт' : support.currentRoom?.agent_id && !isAssigned ? 'Взято другим агентом' : 'Написать ответ...'"
+          name="support_reply"
+          :placeholder="isClosed ? 'Чат закрывается или закрыт' : support.currentRoom?.agent_id && !isAssigned ? 'Взято другим агентом' : 'Написать ответ...'"
           @keydown.enter.exact.prevent="send"
         >
         <button
+          aria-label="Отправить ответ"
           :disabled="!draft.trim() || !isAssigned || isClosed || support.isSending"
           class="h-12 w-12 flex shrink-0 items-center justify-center rounded-2xl bg-main-500 text-white transition active:scale-[0.97] hover:bg-main-400 disabled:opacity-40"
           type="submit"

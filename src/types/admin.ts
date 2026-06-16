@@ -2,7 +2,13 @@ import type { AuthRole } from '~/types/auth'
 import type { Trip, TripStatus } from '~/types/trips'
 
 export type AdminUserRole = AuthRole
-export type AdminAssignableRole = Exclude<AuthRole, 'superadmin'>
+export type AdminAssignableRole = Exclude<AuthRole, 'park' | 'superadmin' | 'tech_support'>
+
+export interface AdminTechSupportNumber {
+  added_by: null | string
+  created_at: string
+  phone: string
+}
 
 export interface AdminUser {
   avatar_url: null | string
@@ -75,4 +81,12 @@ export interface CreateParkOwnerResponse {
   first_name: null | string
   last_name: null | string
   created_at: string
+}
+
+export interface AdminListTechSupportNumbersResponse {
+  numbers: AdminTechSupportNumber[]
+}
+
+export interface AdminTechSupportNumberPayload {
+  phone: string
 }

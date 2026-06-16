@@ -1,4 +1,4 @@
-import type { AuthRole, AuthSession } from '~/types/auth'
+import type { AuthLoginFlow, AuthRole, AuthSession } from '~/types/auth'
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { getAuthSession, logout as logoutRequest, sendOtp, verifyOtp } from '~/api/auth'
 import { ApiError } from '~/api/client'
@@ -9,23 +9,42 @@ import {
   clearStoredAuthArtifacts,
   clearTokenPair,
   readDeviceFingerprint,
+  readPendingAuthFlow,
   readPendingPhone,
   saveDeviceFingerprint,
+  savePendingAuthFlow,
   savePendingPhone,
 } from '~/composables/auth/session'
-
-let isListeningSessionChanges = false
+import { useAdminStore } from '~/stores/admin'
+import { useParkStore } from '~/stores/park'
+import { useSupportStore } from '~/stores/support'
 
 export const useAuthStore = defineStore('auth', () => {
   const currentUser = ref<AuthSession | null>(null)
   const pendingPhone = ref('')
+  const pendingFlow = ref<AuthLoginFlow>('admin')
   const isLoading = ref(false)
   const errorMessage = ref('')
   const sessionStatus = ref<'authenticated' | 'guest' | 'unknown'>('unknown')
+  let sessionChangeController: AbortController | null = null
 
   const isAuthenticated = computed(() => Boolean(currentUser.value))
   const roles = computed<AuthRole[]>(() => currentUser.value?.roles ?? [])
-  const homePath = computed(() => isAuthenticated.value ? '/dashboard' : '/')
+  const homePath = computed(() => {
+    if (!isAuthenticated.value)
+      return '/'
+
+    if (hasAnyRole(['admin', 'superadmin']))
+      return '/dashboard'
+
+    if (hasRole('tech_support'))
+      return '/support'
+
+    if (hasRole('park'))
+      return '/park'
+
+    return '/dashboard'
+  })
 
   function hasRole(role: AuthRole) {
     return roles.value.includes(role)
@@ -37,18 +56,38 @@ export const useAuthStore = defineStore('auth', () => {
 
   function syncSession() {
     pendingPhone.value = readPendingPhone()
+    pendingFlow.value = readPendingAuthFlow()
+  }
+
+  function clearRelatedStores() {
+    useAdminStore().clearAdminState()
+    useParkStore().clearParkState()
+    useSupportStore().clearSupportState()
+  }
+
+  function clearLocalSession() {
+    currentUser.value = null
+    pendingPhone.value = ''
+    pendingFlow.value = 'admin'
+    errorMessage.value = ''
+    sessionStatus.value = 'guest'
+    clearPendingPhone()
+    clearRelatedStores()
   }
 
   function listenSessionChanges() {
-    if (isListeningSessionChanges || typeof window === 'undefined')
+    if (sessionChangeController || typeof window === 'undefined')
       return
 
-    window.addEventListener(AUTH_SESSION_CHANGED_EVENT, () => {
-      syncSession()
-      currentUser.value = null
-      sessionStatus.value = 'guest'
+    sessionChangeController = new AbortController()
+    window.addEventListener(AUTH_SESSION_CHANGED_EVENT, clearLocalSession, {
+      signal: sessionChangeController.signal,
     })
-    isListeningSessionChanges = true
+  }
+
+  function stopListeningSessionChanges() {
+    sessionChangeController?.abort()
+    sessionChangeController = null
   }
 
   function loadSession() {
@@ -56,24 +95,35 @@ export const useAuthStore = defineStore('auth', () => {
     listenSessionChanges()
   }
 
-  function setPendingPhone(phone: string) {
+  function setPendingPhone(phone: string, flow: AuthLoginFlow = pendingFlow.value) {
     pendingPhone.value = phone
-    savePendingPhone(phone)
+    pendingFlow.value = flow
+
+    if (phone) {
+      savePendingPhone(phone)
+      savePendingAuthFlow(flow)
+      return
+    }
+
+    clearPendingPhone()
   }
 
   function completeLogin() {
     clearStoredAuthArtifacts()
     clearPendingPhone()
     pendingPhone.value = ''
+    pendingFlow.value = 'admin'
+  }
+
+  function clearPendingLogin() {
+    pendingPhone.value = ''
+    pendingFlow.value = 'admin'
+    clearPendingPhone()
   }
 
   function clearSession() {
-    currentUser.value = null
-    pendingPhone.value = ''
-    errorMessage.value = ''
-    sessionStatus.value = 'guest'
+    clearLocalSession()
     clearTokenPair()
-    clearPendingPhone()
   }
 
   async function restoreSession(options: { force?: boolean } = {}) {
@@ -110,13 +160,13 @@ export const useAuthStore = defineStore('auth', () => {
     return fingerprint
   }
 
-  async function requestOtp(phone: string) {
+  async function requestOtp(phone: string, flow: AuthLoginFlow = 'admin') {
     isLoading.value = true
     errorMessage.value = ''
 
     try {
-      await sendOtp({ phone })
-      setPendingPhone(phone)
+      await sendOtp({ phone }, flow)
+      setPendingPhone(phone, flow)
     }
     catch (error) {
       errorMessage.value = showErrorToast(error, 'Не удалось отправить код. Попробуйте еще раз.')
@@ -135,11 +185,14 @@ export const useAuthStore = defineStore('auth', () => {
     errorMessage.value = ''
 
     try {
-      await verifyOtp({
-        phone: pendingPhone.value,
-        code,
-        deviceFingerprint: getDeviceFingerprint(),
-      })
+      await verifyOtp(
+        {
+          phone: pendingPhone.value,
+          code,
+          deviceFingerprint: getDeviceFingerprint(),
+        },
+        pendingFlow.value,
+      )
 
       completeLogin()
       await restoreSession({ force: true })
@@ -171,6 +224,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     clearSession,
+    clearPendingLogin,
     confirmOtp,
     currentUser,
     errorMessage,
@@ -183,11 +237,13 @@ export const useAuthStore = defineStore('auth', () => {
     loadSession,
     logout,
     pendingPhone,
+    pendingFlow,
     requestOtp,
     restoreSession,
     roles,
     setPendingPhone,
     sessionStatus,
+    stopListeningSessionChanges,
   }
 })
 

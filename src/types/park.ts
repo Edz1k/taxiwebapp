@@ -1,14 +1,18 @@
 export interface TaxiPark {
-  bin: string
+  bin: null | string
   commission_rate: number
   created_at: string
+  description: null | string
   id: string
   is_active: boolean
   is_verified: boolean
   name: string
   owner_id: string
-  phone: string
+  phone: null | string
+  status: ParkStatus
 }
+
+export type ParkStatus = 'approved' | 'pending' | 'rejected'
 
 export interface ParkChatRoom {
   id: string
@@ -34,6 +38,7 @@ export interface TaxiParkRegisterPayload {
 export interface TaxiParkUpdatePayload {
   bin?: string
   commission_rate?: number
+  description?: string
   name?: string
   phone?: string
 }

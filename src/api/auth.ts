@@ -1,4 +1,5 @@
 import type {
+  AuthLoginFlow,
   AuthLoginResponse,
   AuthSession,
   LogoutAllPayload,
@@ -11,8 +12,23 @@ import type {
 } from '~/types/auth'
 import { apiRequest } from '~/api/client'
 
-export function sendOtp(payload: SendOtpPayload) {
-  return apiRequest<SendOtpResponse>('/auth/otp/send', {
+const AUTH_FLOW_ENDPOINTS: Record<AuthLoginFlow, { send: string, verify: string }> = {
+  admin: {
+    send: '/auth/otp/send',
+    verify: '/auth/otp/verify',
+  },
+  park: {
+    send: '/park/auth/otp/send',
+    verify: '/park/auth/otp/verify',
+  },
+  tech_support: {
+    send: '/tech-support/auth/otp/send',
+    verify: '/tech-support/auth/otp/verify',
+  },
+}
+
+export function sendOtp(payload: SendOtpPayload, flow: AuthLoginFlow = 'admin') {
+  return apiRequest<SendOtpResponse>(AUTH_FLOW_ENDPOINTS[flow].send, {
     method: 'POST',
     skipAuth: true,
     skipAuthRefresh: true,
@@ -22,8 +38,8 @@ export function sendOtp(payload: SendOtpPayload) {
   })
 }
 
-export function verifyOtp(payload: VerifyOtpPayload) {
-  return apiRequest<AuthLoginResponse>('/auth/otp/verify', {
+export function verifyOtp(payload: VerifyOtpPayload, flow: AuthLoginFlow = 'admin') {
+  return apiRequest<AuthLoginResponse>(AUTH_FLOW_ENDPOINTS[flow].verify, {
     method: 'POST',
     deviceFingerprint: payload.deviceFingerprint,
     skipAuth: true,

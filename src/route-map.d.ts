@@ -61,6 +61,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/admin/tech-support': RouteRecordInfo<
+      '/admin/tech-support',
+      '/admin/tech-support',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/admin/trips': RouteRecordInfo<
       '/admin/trips',
       '/admin/trips',
@@ -96,6 +103,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/park/login': RouteRecordInfo<
+      '/park/login',
+      '/park/login',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/park/register': RouteRecordInfo<
       '/park/register',
       '/park/register',
@@ -115,6 +129,13 @@ declare module 'vue-router/auto-routes' {
       '/support/:id',
       { id: ParamValue<true> },
       { id: ParamValue<false> },
+      | never
+    >,
+    '/support/login': RouteRecordInfo<
+      '/support/login',
+      '/support/login',
+      Record<never, never>,
+      Record<never, never>,
       | never
     >,
   }
@@ -160,6 +181,12 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/admin/tech-support.vue': {
+      routes:
+        | '/admin/tech-support'
+      views:
+        | never
+    }
     'src/pages/admin/trips.vue': {
       routes:
         | '/admin/trips'
@@ -190,6 +217,12 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/park/login.vue': {
+      routes:
+        | '/park/login'
+      views:
+        | never
+    }
     'src/pages/park/register.vue': {
       routes:
         | '/park/register'
@@ -205,6 +238,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/support/[id].vue': {
       routes:
         | '/support/[id]'
+      views:
+        | never
+    }
+    'src/pages/support/login.vue': {
+      routes:
+        | '/support/login'
       views:
         | never
     }

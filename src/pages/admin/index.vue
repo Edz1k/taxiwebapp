@@ -43,6 +43,12 @@ const adminCards = computed(() => [
     title: 'Чаты парков',
     to: '/admin/park-chats',
   },
+  {
+    description: 'Номера операторов, которым разрешён отдельный вход в техподдержку.',
+    icon: 'i-mdi-headset',
+    title: 'Техподдержка',
+    to: '/admin/tech-support',
+  },
 ])
 </script>
 

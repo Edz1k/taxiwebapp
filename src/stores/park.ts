@@ -137,8 +137,19 @@ export const useParkStore = defineStore('park', () => {
     }
   }
 
+  function clearParkState() {
+    park.value = null
+    analytics.value = null
+    drivers.value = []
+    invites.value = []
+    isLoading.value = false
+    isMutating.value = false
+    errorMessage.value = ''
+  }
+
   return {
     analytics,
+    clearParkState,
     createInvite,
     drivers,
     errorMessage,
