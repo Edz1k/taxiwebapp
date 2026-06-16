@@ -57,6 +57,23 @@ describe('support store', () => {
     expect(store.isLoading).toBe(false)
   })
 
+  it('passes participant type when loading driver rooms', async () => {
+    const driverRoom = {
+      ...openRoom,
+      id: 'driver-room-id',
+      participant_type: 'driver' as const,
+    }
+    vi.mocked(listTechSupportRooms).mockResolvedValue({
+      rooms: [driverRoom],
+    })
+    const store = useSupportStore()
+
+    await store.loadRooms({ participant_type: 'driver', status: 'open' })
+
+    expect(listTechSupportRooms).toHaveBeenCalledWith({ participant_type: 'driver', status: 'open' })
+    expect(store.rooms).toEqual([driverRoom])
+  })
+
   it('assigns support room', async () => {
     vi.mocked(assignTechSupportRoom).mockResolvedValue({ message: 'assigned' })
     const store = useSupportStore()
@@ -77,6 +94,17 @@ describe('support store', () => {
     expect(requestCloseTechSupportRoom).toHaveBeenCalledWith('room-id')
     expect(room.status).toBe('pending_close')
     expect(store.isMutating).toBe(false)
+  })
+
+  it('marks current room as pending close too', async () => {
+    vi.mocked(requestCloseTechSupportRoom).mockResolvedValue({ message: 'close requested' })
+    const store = useSupportStore()
+    const room = { ...openRoom }
+    store.currentRoom = room
+
+    await store.closeRoom(room)
+
+    expect(store.currentRoom?.status).toBe('pending_close')
   })
 
   it('sets error message when loading rooms fails', async () => {

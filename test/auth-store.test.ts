@@ -32,6 +32,8 @@ describe('auth store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    globalThis.localStorage?.clear()
+    globalThis.sessionStorage?.clear()
   })
 
   it('restores roles-array session once and reuses cached status', async () => {
@@ -101,6 +103,42 @@ describe('auth store', () => {
     )
     expect(auth.currentUser).toEqual(adminSession)
     expect(auth.pendingPhone).toBe('')
+    expect(auth.pendingFlow).toBe('admin')
+  })
+
+  it.each([
+    ['park' as const, ['park' as const], '/park'],
+    ['tech_support' as const, ['tech_support' as const], '/support'],
+  ])('requests and confirms OTP through the %s auth flow', async (flow, roles, homePath) => {
+    const session = {
+      ...adminSession,
+      roles,
+    }
+    vi.mocked(sendOtp).mockResolvedValue({ message: 'otp sent', phone: '+77771234567' })
+    vi.mocked(verifyOtp).mockResolvedValue({ role: roles[0] })
+    vi.mocked(getAuthSession).mockResolvedValue(session)
+    const auth = useAuthStore()
+
+    await auth.requestOtp('+77771234567', flow)
+
+    expect(auth.pendingPhone).toBe('+77771234567')
+    expect(auth.pendingFlow).toBe(flow)
+    expect(sendOtp).toHaveBeenCalledWith({ phone: '+77771234567' }, flow)
+
+    await auth.confirmOtp('123456')
+
+    expect(verifyOtp).toHaveBeenCalledWith(
+      {
+        code: '123456',
+        deviceFingerprint: expect.any(String),
+        phone: '+77771234567',
+      },
+      flow,
+    )
+    expect(auth.currentUser).toEqual(session)
+    expect(auth.pendingPhone).toBe('')
+    expect(auth.pendingFlow).toBe('admin')
+    expect(auth.homePath).toBe(homePath)
   })
 
   it('clears local auth state even when server logout fails', async () => {
