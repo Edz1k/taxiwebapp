@@ -6,7 +6,7 @@
     "node": ">=22.12.0 <23"
   },
   "scripts": {
-    "build": "CHOKIDAR_USEPOLLING=1 NODE_OPTIONS=--experimental-require-module vite-ssg build",
+    "build": "vite-ssg build",
     "dev": "vite --port 3333 --open",
     "lint": "eslint .",
     "preview": "vite preview",
