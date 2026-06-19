@@ -39,6 +39,9 @@ function canAccessRole(currentRoles: AuthRole[], requiredRole: RouteRole | undef
 
 export const install: UserModule = ({ router }) => {
   router.beforeEach(async (to) => {
+    if (import.meta.env.SSR && import.meta.env.MODE !== 'test')
+      return
+
     const auth = useAuthStore()
 
     auth.loadSession()

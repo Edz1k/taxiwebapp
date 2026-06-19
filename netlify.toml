@@ -8,6 +8,12 @@ VITE_API_URL = "https://api.telegramtaxi.kz/api/v1"
 VITE_WS_URL = "wss://ws.telegramtaxi.kz"
 
 [[redirects]]
+from = "https://taxiwebapp.netlify.app/*"
+to = "https://telegramtaxi.kz/:splat"
+status = 301
+force = true
+
+[[redirects]]
 from = "/*"
 to = "/index.html"
 status = 200
