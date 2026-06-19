@@ -12,14 +12,19 @@ import {
 } from 'reka-ui'
 import AppSelectDropdown from '~/components/app/AppSelectDropdown.vue'
 import WebPageShell from '~/components/app/WebPageShell.vue'
+import { useListFilter } from '~/composables/useListFilter'
 import { useAdminStore } from '~/stores/admin'
 import { useAuthStore } from '~/stores/auth'
 
 const admin = useAdminStore()
 const auth = useAuthStore()
-const role = ref<AdminUserRole | ''>('')
+const { value: role, model: roleFilter } = useListFilter<AdminUserRole>()
 
 const isSuperAdmin = computed(() => auth.roles.includes('superadmin'))
+
+const LIMIT = 20
+const offset = ref(0)
+const hasMore = computed(() => offset.value + LIMIT < admin.usersTotal)
 
 const roles: Array<{ label: string, value: AdminUserRole | '' }> = [
   { label: 'Все', value: '' },
@@ -32,22 +37,19 @@ const roles: Array<{ label: string, value: AdminUserRole | '' }> = [
 ]
 
 const assignableRoles = computed<Array<{ label: string, value: AdminAssignableRole }>>(() => {
-  const base: Array<{ label: string, value: AdminAssignableRole }> = [
+  if (isSuperAdmin.value) {
+    return [
+      { label: 'Админ', value: 'admin' },
+      { label: 'Пассажир', value: 'passenger' },
+      { label: 'Водитель', value: 'driver' },
+      { label: 'Владелец парка', value: 'park' },
+      { label: 'Техподдержка', value: 'tech_support' },
+    ]
+  }
+  return [
     { label: 'Пассажир', value: 'passenger' },
     { label: 'Водитель', value: 'driver' },
   ]
-
-  if (isSuperAdmin.value)
-    return [{ label: 'Админ', value: 'admin' }, ...base]
-
-  return base
-})
-
-const roleFilter = computed({
-  get: () => role.value,
-  set: (value) => {
-    role.value = value as AdminUserRole | ''
-  },
 })
 
 definePage({
@@ -63,23 +65,34 @@ useHead({
 })
 
 onMounted(() => {
-  admin.loadUsers({ role: role.value }).catch(() => {})
+  load()
 })
 
 watch(role, () => {
-  admin.loadUsers({ role: role.value }).catch(() => {})
+  offset.value = 0
+  load()
 })
+
+function load() {
+  admin.loadUsers({ role: role.value || undefined, limit: LIMIT, offset: offset.value }).catch(() => {})
+}
+
+async function loadMore() {
+  const nextOffset = offset.value + LIMIT
+  const response = await admin.loadUsers({ role: role.value || undefined, limit: LIMIT, offset: nextOffset }).catch(() => null)
+  if (response) {
+    offset.value = nextOffset
+  }
+}
 
 function displayName(user: { first_name: null | string, last_name: null | string, telegram_username: null | string }) {
   const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ')
-
   return fullName || user.telegram_username || 'Без имени'
 }
 
 function userRoles(user: AdminUser): AdminUserRole[] {
   if (user.roles?.length)
     return user.roles
-
   return user.role ? [user.role] : []
 }
 
@@ -93,14 +106,12 @@ function canGrantRole(user: AdminUser, role: AdminAssignableRole) {
 
 function canRevokeRole(user: AdminUser, role: AdminAssignableRole) {
   const roles = userRoles(user)
-
   return roles.includes(role) && roles.length > 1
 }
 
 function toggleRole(user: AdminUser, role: AdminAssignableRole) {
   if (canGrantRole(user, role))
     return admin.grantUserRole(user, role)
-
   if (canRevokeRole(user, role))
     return admin.revokeUserRole(user, role)
 }
@@ -125,7 +136,7 @@ function toggleRole(user: AdminUser, role: AdminAssignableRole) {
         <span class="text-right">Действие</span>
       </div>
 
-      <div v-if="admin.isLoadingUsers" class="px-4 py-6 text-sm text-white/50">
+      <div v-if="admin.isLoadingUsers && !admin.users.length" class="px-4 py-6 text-sm text-white/50">
         Загружаем пользователей...
       </div>
 
@@ -182,7 +193,7 @@ function toggleRole(user: AdminUser, role: AdminAssignableRole) {
                   :key="item.value"
                   :disabled="admin.isMutating || (!canGrantRole(user, item.value) && !canRevokeRole(user, item.value))"
                   :model-value="userRoles(user).includes(item.value)"
-                  class="relative flex cursor-pointer select-none items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/78 font-800 outline-none transition data-[disabled]:pointer-events-none data-[highlighted]:bg-white/10 data-[highlighted]:text-white data-[disabled]:opacity-45"
+                  class="relative flex cursor-pointer select-none items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/78 font-800 outline-none transition data-disabled:pointer-events-none data-highlighted:bg-white/10 data-highlighted:text-white data-disabled:opacity-45"
                   @update:model-value="toggleRole(user, item.value)"
                 >
                   <span class="h-5 w-5 flex shrink-0 items-center justify-center border border-white/14 rounded-md bg-white/6">
@@ -200,7 +211,7 @@ function toggleRole(user: AdminUser, role: AdminAssignableRole) {
 
                 <DropdownMenuSeparator class="my-1 h-px bg-white/10" />
                 <DropdownMenuLabel class="px-3 py-2 text-[11px] text-white/38 leading-4">
-                  Последнюю роль пользователя снять нельзя. Таксопарки и техподдержка не назначаются из этого меню.
+                  Последнюю роль пользователя снять нельзя.
                 </DropdownMenuLabel>
               </DropdownMenuContent>
             </DropdownMenuPortal>
@@ -226,8 +237,19 @@ function toggleRole(user: AdminUser, role: AdminAssignableRole) {
       </div>
     </div>
 
-    <p class="mt-3 text-xs text-white/40">
-      Всего: {{ admin.usersTotal }}
-    </p>
+    <div class="mt-3 flex items-center justify-between">
+      <p class="text-xs text-white/40">
+        Показано {{ admin.users.length }} из {{ admin.usersTotal }}
+      </p>
+      <button
+        v-if="hasMore"
+        :disabled="admin.isLoadingUsers"
+        class="h-9 rounded-xl border border-white/12 bg-white/8 px-4 text-sm font-900 transition hover:bg-white/12 disabled:opacity-50"
+        type="button"
+        @click="loadMore"
+      >
+        {{ admin.isLoadingUsers ? 'Загружаем...' : 'Загрузить ещё' }}
+      </button>
+    </div>
   </WebPageShell>
 </template>

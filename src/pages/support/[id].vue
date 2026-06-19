@@ -75,9 +75,12 @@ async function send() {
   const content = draft.value.trim()
   if (!content || support.isSending)
     return
-  draft.value = ''
-  await support.sendMessage(roomId.value, content)
-  scrollToBottom()
+  try {
+    await support.sendMessage(roomId.value, content)
+    draft.value = ''
+    scrollToBottom()
+  }
+  catch {}
 }
 
 const isClosed = computed(() => support.currentRoom?.status === 'closed')

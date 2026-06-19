@@ -34,17 +34,6 @@ export interface ApiRequestOptions extends Omit<RequestInit, 'body'> {
   skipAuthRefresh?: boolean
 }
 
-export function buildWsUrl(path: string, params: Record<string, string> = {}) {
-  const url = new URL(path, WS_URL)
-
-  Object.entries(params).forEach(([key, value]) => {
-    if (value)
-      url.searchParams.set(key, value)
-  })
-
-  return url.toString()
-}
-
 function buildHeaders(options: ApiRequestOptions) {
   const headers = new Headers(options.headers)
 

@@ -5,6 +5,7 @@ import { acceptHMRUpdate, defineStore } from 'pinia'
 import { addAdminUserRole, addTechSupportNumber as addTechSupportNumberApi, blockAdminUser, createParkOwner as createParkOwnerApi, getAdminTrip, listAdminTrips, listAdminUsers, listTechSupportNumbers, removeAdminUserRole, removeTechSupportNumber as removeTechSupportNumberApi } from '~/api/admin'
 import { showErrorToast } from '~/api/errors'
 import { listAdminParkChats, listAdminParks, rejectAdminPark, verifyAdminPark } from '~/api/park'
+import { useStoreAction } from '~/composables/useStoreAction'
 
 export const useAdminStore = defineStore('admin', () => {
   const users = ref<AdminUser[]>([])
@@ -23,221 +24,98 @@ export const useAdminStore = defineStore('admin', () => {
   const isMutating = ref(false)
   const errorMessage = ref('')
 
-  async function loadUsers(params: AdminListUsersParams = {}) {
-    isLoadingUsers.value = true
-    errorMessage.value = ''
+  const { withLoading } = useStoreAction(errorMessage)
 
-    try {
+  async function loadUsers(params: AdminListUsersParams = {}) {
+    return withLoading(isLoadingUsers, async () => {
       const response = await listAdminUsers(params)
       users.value = response.users
       usersTotal.value = response.total
       return response
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось загрузить пользователей.')
-      throw error
-    }
-    finally {
-      isLoadingUsers.value = false
-    }
+    }, 'Не удалось загрузить пользователей.')
   }
 
   async function setUserBlocked(user: AdminUser, blocked: boolean) {
-    isMutating.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isMutating, async () => {
       const response = await blockAdminUser(user.id, { blocked })
       user.is_blocked = response.is_blocked
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось изменить статус пользователя.')
-      throw error
-    }
-    finally {
-      isMutating.value = false
-    }
+    }, 'Не удалось изменить статус пользователя.')
   }
 
   async function grantUserRole(user: AdminUser, role: AdminAssignableRole) {
-    isMutating.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isMutating, async () => {
       const response = await addAdminUserRole(user.id, { role })
       user.roles = response.roles
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось выдать роль пользователю.')
-      throw error
-    }
-    finally {
-      isMutating.value = false
-    }
+    }, 'Не удалось выдать роль пользователю.')
   }
 
   async function revokeUserRole(user: AdminUser, role: AdminAssignableRole) {
-    isMutating.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isMutating, async () => {
       const response = await removeAdminUserRole(user.id, role)
       user.roles = response.roles
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось отозвать роль пользователя.')
-      throw error
-    }
-    finally {
-      isMutating.value = false
-    }
+    }, 'Не удалось отозвать роль пользователя.')
   }
 
   async function loadTrips(params: AdminListTripsParams = {}) {
-    isLoadingTrips.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isLoadingTrips, async () => {
       const response = await listAdminTrips(params)
       trips.value = response.trips
       tripsTotal.value = response.total
       return response
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось загрузить поездки.')
-      throw error
-    }
-    finally {
-      isLoadingTrips.value = false
-    }
+    }, 'Не удалось загрузить поездки.')
   }
 
   async function loadTrip(id: string) {
-    isLoadingTrips.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isLoadingTrips, async () => {
       selectedTrip.value = await getAdminTrip(id)
       return selectedTrip.value
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось загрузить поездку.')
-      throw error
-    }
-    finally {
-      isLoadingTrips.value = false
-    }
+    }, 'Не удалось загрузить поездку.')
   }
 
   async function loadParks(limit = 20, offset = 0) {
-    isLoadingParks.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isLoadingParks, async () => {
       const response = await listAdminParks(limit, offset)
       parks.value = response.parks
       return response
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось загрузить таксопарки.')
-      throw error
-    }
-    finally {
-      isLoadingParks.value = false
-    }
+    }, 'Не удалось загрузить таксопарки.')
   }
 
   async function verifyPark(park: TaxiPark) {
-    isMutating.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isMutating, async () => {
       await verifyAdminPark(park.id)
       park.is_verified = true
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось подтвердить таксопарк.')
-      throw error
-    }
-    finally {
-      isMutating.value = false
-    }
+    }, 'Не удалось подтвердить таксопарк.')
   }
 
   async function rejectPark(park: TaxiPark) {
-    isMutating.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isMutating, async () => {
       await rejectAdminPark(park.id)
       parks.value = parks.value.filter(p => p.id !== park.id)
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось отклонить таксопарк.')
-      throw error
-    }
-    finally {
-      isMutating.value = false
-    }
+    }, 'Не удалось отклонить таксопарк.')
   }
 
   async function createParkOwner(payload: CreateParkOwnerPayload) {
-    isMutating.value = true
-    errorMessage.value = ''
-
-    try {
-      return await createParkOwnerApi(payload)
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось создать владельца парка.')
-      throw error
-    }
-    finally {
-      isMutating.value = false
-    }
+    return withLoading(isMutating, () => createParkOwnerApi(payload), 'Не удалось создать владельца парка.')
   }
 
   async function loadParkChats(params: { status?: string, limit?: number, offset?: number } = {}) {
-    isLoadingParkChats.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isLoadingParkChats, async () => {
       const response = await listAdminParkChats(params)
       parkChats.value = response.rooms
       return response
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось загрузить чаты парков.')
-      throw error
-    }
-    finally {
-      isLoadingParkChats.value = false
-    }
+    }, 'Не удалось загрузить чаты парков.')
   }
 
   async function loadTechSupportNumbers() {
-    isLoadingTechSupportNumbers.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isLoadingTechSupportNumbers, async () => {
       const response = await listTechSupportNumbers()
       techSupportNumbers.value = response.numbers
       return response
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось загрузить номера техподдержки.')
-      throw error
-    }
-    finally {
-      isLoadingTechSupportNumbers.value = false
-    }
+    }, 'Не удалось загрузить номера техподдержки.')
   }
 
   async function addTechSupportNumber(phone: string) {
-    isMutating.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isMutating, async () => {
       const response = await addTechSupportNumberApi({ phone })
       if (!techSupportNumbers.value.some(item => item.phone === response.phone)) {
         techSupportNumbers.value = [
@@ -246,31 +124,14 @@ export const useAdminStore = defineStore('admin', () => {
         ]
       }
       return response
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось добавить номер техподдержки.')
-      throw error
-    }
-    finally {
-      isMutating.value = false
-    }
+    }, 'Не удалось добавить номер техподдержки.')
   }
 
   async function removeTechSupportNumber(phone: string) {
-    isMutating.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isMutating, async () => {
       await removeTechSupportNumberApi({ phone })
       techSupportNumbers.value = techSupportNumbers.value.filter(item => item.phone !== phone)
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось удалить номер техподдержки.')
-      throw error
-    }
-    finally {
-      isMutating.value = false
-    }
+    }, 'Не удалось удалить номер техподдержки.')
   }
 
   function clearAdminState() {

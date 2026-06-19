@@ -2,10 +2,11 @@
 import type { Trip, TripStatus } from '~/types/trips'
 import AppSelectDropdown from '~/components/app/AppSelectDropdown.vue'
 import WebPageShell from '~/components/app/WebPageShell.vue'
+import { useListFilter } from '~/composables/useListFilter'
 import { useAdminStore } from '~/stores/admin'
 
 const admin = useAdminStore()
-const status = ref<TripStatus | ''>('')
+const { value: status, model: statusFilter } = useListFilter<TripStatus>()
 
 const statuses: Array<{ label: string, value: TripStatus | '' }> = [
   { label: 'Все', value: '' },
@@ -17,12 +18,9 @@ const statuses: Array<{ label: string, value: TripStatus | '' }> = [
   { label: 'Отменён', value: 'cancelled' },
 ]
 
-const statusFilter = computed({
-  get: () => status.value,
-  set: (value) => {
-    status.value = value as TripStatus | ''
-  },
-})
+const LIMIT = 20
+const offset = ref(0)
+const hasMore = computed(() => offset.value + LIMIT < admin.tripsTotal)
 
 definePage({
   meta: {
@@ -37,12 +35,25 @@ useHead({
 })
 
 onMounted(() => {
-  admin.loadTrips({ status: status.value }).catch(() => {})
+  load()
 })
 
 watch(status, () => {
-  admin.loadTrips({ status: status.value }).catch(() => {})
+  offset.value = 0
+  load()
 })
+
+function load() {
+  admin.loadTrips({ status: status.value || undefined, limit: LIMIT, offset: offset.value }).catch(() => {})
+}
+
+async function loadMore() {
+  const nextOffset = offset.value + LIMIT
+  const response = await admin.loadTrips({ status: status.value || undefined, limit: LIMIT, offset: nextOffset }).catch(() => null)
+  if (response) {
+    offset.value = nextOffset
+  }
+}
 
 function formatFare(trip: Trip) {
   return `${Math.round(trip.final_fare ?? trip.estimated_fare).toLocaleString('ru-RU')} ₸`
@@ -68,7 +79,7 @@ function formatFare(trip: Trip) {
         <span class="text-right">ID</span>
       </div>
 
-      <div v-if="admin.isLoadingTrips" class="px-4 py-6 text-sm text-white/50">
+      <div v-if="admin.isLoadingTrips && !admin.trips.length" class="px-4 py-6 text-sm text-white/50">
         Загружаем поездки...
       </div>
 
@@ -92,6 +103,21 @@ function formatFare(trip: Trip) {
         <span class="text-sm text-white/62 font-800">{{ trip.status }}</span>
         <span class="text-sm font-900">{{ formatFare(trip) }}</span>
         <span class="truncate text-left text-xs text-white/38 md:text-right">{{ trip.id }}</span>
+      </button>
+    </div>
+
+    <div class="mt-3 flex items-center justify-between">
+      <p class="text-xs text-white/40">
+        Показано {{ admin.trips.length }} из {{ admin.tripsTotal }}
+      </p>
+      <button
+        v-if="hasMore"
+        :disabled="admin.isLoadingTrips"
+        class="h-9 rounded-xl border border-white/12 bg-white/8 px-4 text-sm font-900 transition hover:bg-white/12 disabled:opacity-50"
+        type="button"
+        @click="loadMore"
+      >
+        {{ admin.isLoadingTrips ? 'Загружаем...' : 'Загрузить ещё' }}
       </button>
     </div>
 
@@ -121,9 +147,5 @@ function formatFare(trip: Trip) {
         </p>
       </div>
     </section>
-
-    <p class="mt-3 text-xs text-white/40">
-      Всего: {{ admin.tripsTotal }}
-    </p>
   </WebPageShell>
 </template>

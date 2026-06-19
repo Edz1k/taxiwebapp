@@ -1,22 +1,17 @@
 <script setup lang="ts">
 import AppSelectDropdown from '~/components/app/AppSelectDropdown.vue'
 import WebPageShell from '~/components/app/WebPageShell.vue'
+import { useListFilter } from '~/composables/useListFilter'
 import { useAdminStore } from '~/stores/admin'
 
 const admin = useAdminStore()
-const statusFilter = ref<'open' | 'closed' | ''>('')
+const { value: statusFilter, model: statusModel } = useListFilter<'open' | 'closed'>()
+
 const statuses: Array<{ label: string, value: 'closed' | 'open' | '' }> = [
   { label: 'Все', value: '' },
   { label: 'Открытые', value: 'open' },
   { label: 'Закрытые', value: 'closed' },
 ]
-
-const statusModel = computed({
-  get: () => statusFilter.value,
-  set: (value) => {
-    statusFilter.value = value as 'closed' | 'open' | ''
-  },
-})
 
 definePage({
   meta: {

@@ -2,10 +2,8 @@ import type {
   AuthLoginFlow,
   AuthLoginResponse,
   AuthSession,
-  LogoutAllPayload,
   LogoutPayload,
   MessageResponse,
-  RefreshTokenPayload,
   SendOtpPayload,
   SendOtpResponse,
   VerifyOtpPayload,
@@ -51,16 +49,6 @@ export function verifyOtp(payload: VerifyOtpPayload, flow: AuthLoginFlow = 'admi
   })
 }
 
-export function refreshToken(payload: RefreshTokenPayload = {}) {
-  return apiRequest<MessageResponse>('/auth/token/refresh', {
-    method: 'POST',
-    deviceFingerprint: payload.deviceFingerprint,
-    skipAuth: true,
-    skipAuthRefresh: true,
-    body: {},
-  })
-}
-
 export function getAuthSession() {
   return apiRequest<AuthSession>('/auth/session')
 }
@@ -73,9 +61,3 @@ export function logout(_payload: LogoutPayload = {}) {
   })
 }
 
-export function logoutAll(_payload: LogoutAllPayload = {}) {
-  return apiRequest<MessageResponse>('/auth/logout/all', {
-    method: 'POST',
-    body: {},
-  })
-}

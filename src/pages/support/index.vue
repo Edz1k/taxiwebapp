@@ -2,11 +2,12 @@
 import type { SupportParticipantType, SupportRoomStatus } from '~/types/support'
 import AppSelectDropdown from '~/components/app/AppSelectDropdown.vue'
 import WebPageShell from '~/components/app/WebPageShell.vue'
+import { useListFilter } from '~/composables/useListFilter'
 import { useSupportStore } from '~/stores/support'
 
 const support = useSupportStore()
-const participantType = ref<SupportParticipantType>('passenger')
-const status = ref<SupportRoomStatus | ''>('open')
+const { value: participantType, model: participantFilter } = useListFilter<SupportParticipantType>('passenger')
+const { value: status, model: statusFilter } = useListFilter<SupportRoomStatus>('open')
 
 const statuses: Array<{ label: string, value: SupportRoomStatus | '' }> = [
   { label: 'Все', value: '' },
@@ -18,20 +19,6 @@ const participantTypes: Array<{ label: string, value: SupportParticipantType }> 
   { label: 'Пассажиры', value: 'passenger' },
   { label: 'Водители', value: 'driver' },
 ]
-
-const participantFilter = computed({
-  get: () => participantType.value,
-  set: (value) => {
-    participantType.value = value as SupportParticipantType
-  },
-})
-
-const statusFilter = computed({
-  get: () => status.value,
-  set: (value) => {
-    status.value = value as SupportRoomStatus | ''
-  },
-})
 
 definePage({
   meta: {
@@ -46,12 +33,14 @@ useHead({
 })
 
 onMounted(() => {
-  support.loadRooms({ participant_type: participantType.value, status: status.value }).catch(() => {})
+  loadRooms()
 })
 
-watch([participantType, status], () => {
-  support.loadRooms({ participant_type: participantType.value, status: status.value }).catch(() => {})
-})
+watch([participantType, status], () => loadRooms())
+
+function loadRooms() {
+  support.loadRooms({ participant_type: participantType.value || undefined, status: status.value || undefined }).catch(() => {})
+}
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('ru-RU', {
@@ -72,17 +61,14 @@ function statusLabel(value: SupportRoomStatus) {
     open: 'Открыто',
     pending_close: 'На закрытии',
   }
-
   return labels[value]
 }
 
 function statusClass(value: SupportRoomStatus) {
   if (value === 'open')
     return 'bg-emerald-500/12 text-emerald-300 md:bg-transparent'
-
   if (value === 'pending_close')
     return 'bg-amber-500/12 text-amber-300 md:bg-transparent'
-
   return 'bg-white/8 text-white/45 md:bg-transparent'
 }
 </script>

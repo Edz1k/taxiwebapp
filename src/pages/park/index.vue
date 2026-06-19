@@ -4,6 +4,10 @@ import { useParkStore } from '~/stores/park'
 
 const parkStore = useParkStore()
 
+const isEditing = ref(false)
+const editForm = reactive({ name: '', description: '', bin: '', phone: '', commission_rate: 0 })
+const isCopied = reactive<Record<string, boolean>>({})
+
 definePage({
   meta: {
     authRedirect: '/park/login',
@@ -22,9 +26,37 @@ onMounted(() => {
 
 async function loadParkData() {
   const park = await parkStore.loadPark({ silentNotFound: true })
-
   if (park)
     await parkStore.loadDashboard()
+}
+
+function openEdit() {
+  if (!parkStore.park)
+    return
+  editForm.name = parkStore.park.name
+  editForm.description = parkStore.park.description ?? ''
+  editForm.bin = parkStore.park.bin ?? ''
+  editForm.phone = parkStore.park.phone ?? ''
+  editForm.commission_rate = parkStore.park.commission_rate
+  isEditing.value = true
+}
+
+async function saveEdit() {
+  const payload = {
+    name: editForm.name || undefined,
+    description: editForm.description || undefined,
+    bin: editForm.bin || undefined,
+    phone: editForm.phone || undefined,
+    commission_rate: editForm.commission_rate || undefined,
+  }
+  await parkStore.update(payload)
+  isEditing.value = false
+}
+
+async function copyToken(token: string) {
+  await navigator.clipboard.writeText(token)
+  isCopied[token] = true
+  setTimeout(() => { isCopied[token] = false }, 2000)
 }
 </script>
 
@@ -37,6 +69,14 @@ async function loadParkData() {
   >
     <template v-if="parkStore.park" #actions>
       <button
+        class="h-11 inline-flex items-center gap-2 border border-white/12 rounded-full bg-white/8 px-4 text-sm font-900 transition hover:bg-white/12"
+        type="button"
+        @click="openEdit()"
+      >
+        <span class="i-mdi-pencil text-5 text-cyan-200" />
+        Редактировать
+      </button>
+      <button
         :disabled="parkStore.isLoading"
         class="h-11 inline-flex items-center gap-2 border border-white/12 rounded-full bg-white/8 px-4 text-sm font-900 transition hover:bg-white/12 disabled:opacity-60"
         type="button"
@@ -46,6 +86,66 @@ async function loadParkData() {
         {{ parkStore.isLoading ? 'Обновляем...' : 'Обновить' }}
       </button>
     </template>
+
+    <!-- Edit modal -->
+    <Teleport to="body">
+      <Transition enter-active-class="transition duration-150" enter-from-class="opacity-0" leave-active-class="transition duration-100" leave-to-class="opacity-0">
+        <div
+          v-if="isEditing"
+          class="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+          @click.self="isEditing = false"
+        >
+          <form
+            class="w-full max-w-lg border border-white/10 rounded-3xl bg-#071a38 p-6 shadow-2xl"
+            @submit.prevent="saveEdit()"
+          >
+            <h2 class="text-xl font-950">
+              Редактировать парк
+            </h2>
+
+            <div class="mt-5 grid gap-3">
+              <label class="grid gap-1.5">
+                <span class="text-xs text-white/42 font-900 uppercase">Название</span>
+                <input v-model="editForm.name" class="h-11 w-full border border-white/10 rounded-xl bg-white/8 px-4 text-sm outline-none focus:border-cyan-300/40" type="text">
+              </label>
+              <label class="grid gap-1.5">
+                <span class="text-xs text-white/42 font-900 uppercase">Описание</span>
+                <textarea v-model="editForm.description" class="w-full border border-white/10 rounded-xl bg-white/8 px-4 py-3 text-sm outline-none focus:border-cyan-300/40" rows="3" />
+              </label>
+              <label class="grid gap-1.5">
+                <span class="text-xs text-white/42 font-900 uppercase">БИН</span>
+                <input v-model="editForm.bin" class="h-11 w-full border border-white/10 rounded-xl bg-white/8 px-4 text-sm outline-none focus:border-cyan-300/40" type="text">
+              </label>
+              <label class="grid gap-1.5">
+                <span class="text-xs text-white/42 font-900 uppercase">Телефон</span>
+                <input v-model="editForm.phone" class="h-11 w-full border border-white/10 rounded-xl bg-white/8 px-4 text-sm outline-none focus:border-cyan-300/40" type="tel">
+              </label>
+              <label class="grid gap-1.5">
+                <span class="text-xs text-white/42 font-900 uppercase">Комиссия (%)</span>
+                <input v-model.number="editForm.commission_rate" class="h-11 w-full border border-white/10 rounded-xl bg-white/8 px-4 text-sm outline-none focus:border-cyan-300/40" type="number" step="0.1" min="0" max="100">
+              </label>
+            </div>
+
+            <div class="mt-5 flex gap-3">
+              <button
+                :disabled="parkStore.isMutating"
+                class="h-11 flex-1 rounded-2xl bg-cyan-300 text-sm text-#06142f font-900 transition hover:bg-cyan-200 disabled:opacity-60"
+                type="submit"
+              >
+                {{ parkStore.isMutating ? 'Сохраняем...' : 'Сохранить' }}
+              </button>
+              <button
+                class="h-11 rounded-2xl border border-white/12 bg-white/8 px-5 text-sm font-900 transition hover:bg-white/12"
+                type="button"
+                @click="isEditing = false"
+              >
+                Отмена
+              </button>
+            </div>
+          </form>
+        </div>
+      </Transition>
+    </Teleport>
 
     <section v-if="parkStore.isLoading && !parkStore.park" class="mt-5 border border-white/10 rounded-3xl bg-white/8 p-5 text-sm text-white/50 backdrop-blur">
       Загружаем кабинет таксопарка...
@@ -84,7 +184,10 @@ async function loadParkData() {
             <h2 class="mt-1 text-2xl font-950">
               {{ parkStore.park.name }}
             </h2>
-            <p class="mt-1 text-sm text-white/50">
+            <p v-if="parkStore.park.description" class="mt-1 text-sm text-white/62 leading-5">
+              {{ parkStore.park.description }}
+            </p>
+            <p class="mt-2 text-sm text-white/50">
               {{ parkStore.park.bin || parkStore.park.phone || parkStore.park.owner_id }}
             </p>
           </div>
@@ -141,13 +244,23 @@ async function loadParkData() {
           <p v-if="!parkStore.invites.length" class="text-sm text-white/50">
             Приглашений нет.
           </p>
-          <div v-for="invite in parkStore.invites" :key="invite.id ?? invite.token" class="rounded-xl bg-black/14 p-3">
-            <p class="break-all text-sm font-900">
+          <div v-for="invite in parkStore.invites" :key="invite.id ?? invite.token" class="flex items-center gap-3 rounded-xl bg-black/14 p-3">
+            <p class="min-w-0 flex-1 break-all text-sm font-mono font-900">
               {{ invite.token }}
             </p>
-            <p class="mt-1 text-xs text-white/38">
-              {{ invite.used_by ? 'Использовано' : 'Активно' }}
-            </p>
+            <div class="flex shrink-0 flex-col items-end gap-1.5">
+              <button
+                class="h-8 rounded-lg bg-white/8 px-3 text-xs font-900 transition hover:bg-white/14"
+                type="button"
+                @click="copyToken(invite.token)"
+              >
+                <span v-if="isCopied[invite.token]" class="text-emerald-300">Скопировано</span>
+                <span v-else>Копировать</span>
+              </button>
+              <p class="text-right text-xs text-white/38">
+                {{ invite.used_by ? 'Использовано' : 'Активно' }}
+              </p>
+            </div>
           </div>
         </div>
       </section>

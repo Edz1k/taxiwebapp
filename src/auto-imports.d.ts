@@ -202,6 +202,7 @@ declare global {
   const useKeyModifier: typeof import('@vueuse/core').useKeyModifier
   const useLastChanged: typeof import('@vueuse/core').useLastChanged
   const useLink: typeof import('vue-router/auto').useLink
+  const useListFilter: typeof import('./composables/useListFilter').useListFilter
   const useLocalStorage: typeof import('@vueuse/core').useLocalStorage
   const useMagicKeys: typeof import('@vueuse/core').useMagicKeys
   const useManualRefHistory: typeof import('@vueuse/core').useManualRefHistory
@@ -261,6 +262,7 @@ declare global {
   const useStepper: typeof import('@vueuse/core').useStepper
   const useStorage: typeof import('@vueuse/core').useStorage
   const useStorageAsync: typeof import('@vueuse/core').useStorageAsync
+  const useStoreAction: typeof import('./composables/useStoreAction').useStoreAction
   const useStyleTag: typeof import('@vueuse/core').useStyleTag
   const useSupportStore: typeof import('./stores/support').useSupportStore
   const useSupported: typeof import('@vueuse/core').useSupported
@@ -526,6 +528,7 @@ declare module 'vue' {
     readonly useKeyModifier: UnwrapRef<typeof import('@vueuse/core')['useKeyModifier']>
     readonly useLastChanged: UnwrapRef<typeof import('@vueuse/core')['useLastChanged']>
     readonly useLink: UnwrapRef<typeof import('vue-router/auto')['useLink']>
+    readonly useListFilter: UnwrapRef<typeof import('./composables/useListFilter')['useListFilter']>
     readonly useLocalStorage: UnwrapRef<typeof import('@vueuse/core')['useLocalStorage']>
     readonly useMagicKeys: UnwrapRef<typeof import('@vueuse/core')['useMagicKeys']>
     readonly useManualRefHistory: UnwrapRef<typeof import('@vueuse/core')['useManualRefHistory']>
@@ -585,6 +588,7 @@ declare module 'vue' {
     readonly useStepper: UnwrapRef<typeof import('@vueuse/core')['useStepper']>
     readonly useStorage: UnwrapRef<typeof import('@vueuse/core')['useStorage']>
     readonly useStorageAsync: UnwrapRef<typeof import('@vueuse/core')['useStorageAsync']>
+    readonly useStoreAction: UnwrapRef<typeof import('./composables/useStoreAction')['useStoreAction']>
     readonly useStyleTag: UnwrapRef<typeof import('@vueuse/core')['useStyleTag']>
     readonly useSupportStore: UnwrapRef<typeof import('./stores/support')['useSupportStore']>
     readonly useSupported: UnwrapRef<typeof import('@vueuse/core')['useSupported']>

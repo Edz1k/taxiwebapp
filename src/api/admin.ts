@@ -6,6 +6,7 @@ import type {
   AdminListTripsResponse,
   AdminListUsersParams,
   AdminListUsersResponse,
+  AdminTechSupportNumber,
   AdminTechSupportNumberPayload,
   AdminUpdateUserRolesPayload,
   AdminUpdateUserRolesResponse,
@@ -72,7 +73,7 @@ export function listTechSupportNumbers() {
 }
 
 export function addTechSupportNumber(payload: AdminTechSupportNumberPayload) {
-  return apiRequest<AdminTechSupportNumberPayload>('/admin/tech-support-numbers', {
+  return apiRequest<AdminTechSupportNumber>('/admin/tech-support-numbers', {
     method: 'POST',
     body: payload,
   })

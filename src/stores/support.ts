@@ -1,6 +1,5 @@
 import type { SupportListRoomsParams, SupportMessage, SupportRoom } from '~/types/support'
 import { acceptHMRUpdate, defineStore } from 'pinia'
-import { showErrorToast } from '~/api/errors'
 import {
   claimTechSupportRoom,
   closeTechSupportRoom,
@@ -8,6 +7,7 @@ import {
   listTechSupportRooms,
   sendTechSupportMessage,
 } from '~/api/support'
+import { useStoreAction } from '~/composables/useStoreAction'
 
 export const useSupportStore = defineStore('support', () => {
   const rooms = ref<SupportRoom[]>([])
@@ -19,94 +19,46 @@ export const useSupportStore = defineStore('support', () => {
   const isSending = ref(false)
   const errorMessage = ref('')
 
-  async function loadRooms(params: SupportListRoomsParams = {}) {
-    isLoading.value = true
-    errorMessage.value = ''
+  const { withLoading } = useStoreAction(errorMessage)
 
-    try {
+  async function loadRooms(params: SupportListRoomsParams = {}) {
+    return withLoading(isLoading, async () => {
       const response = await listTechSupportRooms(params)
       rooms.value = response.rooms
       return response
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось загрузить обращения поддержки.')
-      throw error
-    }
-    finally {
-      isLoading.value = false
-    }
+    }, 'Не удалось загрузить обращения поддержки.')
   }
 
   async function loadRoom(id: string) {
-    isLoading.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isLoading, async () => {
       currentRoom.value = await claimTechSupportRoom(id)
       return currentRoom.value
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось загрузить обращение.')
-      throw error
-    }
-    finally {
-      isLoading.value = false
-    }
+    }, 'Не удалось загрузить обращение.')
   }
 
   async function loadMessages(id: string) {
-    isLoadingMessages.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isLoadingMessages, async () => {
       const response = await getTechSupportMessages(id, { limit: 100 })
       messages.value = response.messages ?? []
       return response
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось загрузить сообщения.')
-      throw error
-    }
-    finally {
-      isLoadingMessages.value = false
-    }
+    }, 'Не удалось загрузить сообщения.')
   }
 
   async function sendMessage(id: string, content: string) {
-    isSending.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isSending, async () => {
       const msg = await sendTechSupportMessage(id, content)
       messages.value = [...messages.value, msg]
       return msg
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось отправить сообщение.')
-      throw error
-    }
-    finally {
-      isSending.value = false
-    }
+    }, 'Не удалось отправить сообщение.')
   }
 
   async function closeRoom(room: SupportRoom) {
-    isMutating.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isMutating, async () => {
       await closeTechSupportRoom(room.id)
       room.status = 'closed'
       if (currentRoom.value?.id === room.id)
         currentRoom.value.status = 'closed'
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось закрыть обращение.')
-      throw error
-    }
-    finally {
-      isMutating.value = false
-    }
+    }, 'Не удалось закрыть обращение.')
   }
 
   function clearSupportState() {

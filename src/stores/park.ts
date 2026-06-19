@@ -12,6 +12,7 @@ import {
   removeParkDriver,
   updateMyPark,
 } from '~/api/park'
+import { useStoreAction } from '~/composables/useStoreAction'
 
 export const useParkStore = defineStore('park', () => {
   const park = ref<TaxiPark | null>(null)
@@ -22,10 +23,11 @@ export const useParkStore = defineStore('park', () => {
   const isMutating = ref(false)
   const errorMessage = ref('')
 
+  const { withLoading } = useStoreAction(errorMessage)
+
   async function loadPark(options: { silentNotFound?: boolean } = {}) {
     isLoading.value = true
     errorMessage.value = ''
-
     try {
       park.value = await getMyPark()
       return park.value
@@ -35,7 +37,6 @@ export const useParkStore = defineStore('park', () => {
         park.value = null
         return null
       }
-
       errorMessage.value = showErrorToast(error, 'Не удалось загрузить таксопарк.')
       throw error
     }
@@ -45,96 +46,45 @@ export const useParkStore = defineStore('park', () => {
   }
 
   async function register(payload: TaxiParkRegisterPayload) {
-    isMutating.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isMutating, async () => {
       park.value = await registerPark(payload)
       return park.value
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось зарегистрировать таксопарк.')
-      throw error
-    }
-    finally {
-      isMutating.value = false
-    }
+    }, 'Не удалось зарегистрировать таксопарк.')
   }
 
   async function update(payload: TaxiParkUpdatePayload) {
-    isMutating.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isMutating, async () => {
       park.value = await updateMyPark(payload)
       return park.value
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось обновить таксопарк.')
-      throw error
-    }
-    finally {
-      isMutating.value = false
-    }
+    }, 'Не удалось обновить таксопарк.')
   }
 
   async function loadDashboard() {
-    isLoading.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isLoading, async () => {
       const [analyticsResponse, driversResponse, invitesResponse] = await Promise.all([
         getParkAnalytics(),
         listParkDrivers(),
         listParkInvites(),
       ])
-
       analytics.value = analyticsResponse
       drivers.value = driversResponse.drivers
       invites.value = invitesResponse.invites
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось загрузить данные таксопарка.')
-      throw error
-    }
-    finally {
-      isLoading.value = false
-    }
+    }, 'Не удалось загрузить данные таксопарка.')
   }
 
   async function createInvite() {
-    isMutating.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isMutating, async () => {
       const invite = await createParkInvite()
       invites.value = [invite, ...invites.value]
       return invite
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось создать приглашение.')
-      throw error
-    }
-    finally {
-      isMutating.value = false
-    }
+    }, 'Не удалось создать приглашение.')
   }
 
   async function removeDriver(id: string) {
-    isMutating.value = true
-    errorMessage.value = ''
-
-    try {
+    return withLoading(isMutating, async () => {
       await removeParkDriver(id)
       drivers.value = drivers.value.filter(driver => driver.id !== id)
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось удалить водителя из парка.')
-      throw error
-    }
-    finally {
-      isMutating.value = false
-    }
+    }, 'Не удалось удалить водителя из парка.')
   }
 
   function clearParkState() {
