@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import WebPageShell from '~/components/app/WebPageShell.vue'
 import { useAdminStore } from '~/stores/admin'
+import { formatDate } from '~/utils/format'
 
 const admin = useAdminStore()
 
@@ -20,13 +21,6 @@ onMounted(() => {
   admin.loadParks().catch(() => {})
 })
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('ru-RU', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(value))
-}
 </script>
 
 <template>
@@ -87,7 +81,7 @@ function formatDate(value: string) {
         >
           {{ park.is_verified ? 'Проверен' : 'Ожидает' }}
         </span>
-        <span class="text-sm text-white/50 font-800">{{ formatDate(park.created_at) }}</span>
+        <span class="text-sm text-white/50 font-800">{{ formatDate(park.created_at, { day: 'numeric', month: 'short', year: 'numeric' }) }}</span>
 
         <div class="flex flex-wrap items-center justify-start gap-2 md:justify-end">
           <button

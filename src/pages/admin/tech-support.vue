@@ -2,6 +2,7 @@
 import WebPageShell from '~/components/app/WebPageShell.vue'
 import { isKazakhstanPhoneComplete, toKazakhstanE164 } from '~/composables/auth/phone'
 import { useAdminStore } from '~/stores/admin'
+import { formatDate } from '~/utils/format'
 
 const admin = useAdminStore()
 const phone = ref('')
@@ -23,15 +24,6 @@ useHead({
 onMounted(() => {
   admin.loadTechSupportNumbers().catch(() => {})
 })
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('ru-RU', {
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    month: 'short',
-  }).format(new Date(value))
-}
 
 async function submit() {
   if (!canSubmit.value)

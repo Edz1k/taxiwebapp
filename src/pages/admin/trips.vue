@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import type { Trip, TripStatus } from '~/types/trips'
+import type { TripStatus } from '~/types/trips'
 import AppSelectDropdown from '~/components/app/AppSelectDropdown.vue'
 import WebPageShell from '~/components/app/WebPageShell.vue'
 import { useListFilter } from '~/composables/useListFilter'
 import { useAdminStore } from '~/stores/admin'
+import { formatDate, formatFare } from '~/utils/format'
 
 const admin = useAdminStore()
 const { value: status, model: statusFilter } = useListFilter<TripStatus>()
@@ -55,9 +56,6 @@ async function loadMore() {
   }
 }
 
-function formatFare(trip: Trip) {
-  return `${Math.round(trip.final_fare ?? trip.estimated_fare).toLocaleString('ru-RU')} ₸`
-}
 </script>
 
 <template>

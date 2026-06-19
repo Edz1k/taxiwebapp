@@ -3,6 +3,7 @@ import AppSelectDropdown from '~/components/app/AppSelectDropdown.vue'
 import WebPageShell from '~/components/app/WebPageShell.vue'
 import { useListFilter } from '~/composables/useListFilter'
 import { useAdminStore } from '~/stores/admin'
+import { formatDate } from '~/utils/format'
 
 const admin = useAdminStore()
 const { value: statusFilter, model: statusModel } = useListFilter<'open' | 'closed'>()
@@ -35,15 +36,6 @@ function loadChats() {
   admin.loadParkChats({ status: statusFilter.value || undefined }).catch(() => {})
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('ru-RU', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
-}
 </script>
 
 <template>

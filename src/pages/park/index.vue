@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import WebPageShell from '~/components/app/WebPageShell.vue'
 import { useParkStore } from '~/stores/park'
+import { formatRevenue } from '~/utils/format'
 
 const parkStore = useParkStore()
 
 const isEditing = ref(false)
 const editForm = reactive({ name: '', description: '', bin: '', phone: '', commission_rate: 0 })
-const isCopied = reactive<Record<string, boolean>>({})
+const { copy, copied, source: copiedText } = useClipboard({ legacy: true })
 
 definePage({
   meta: {
@@ -54,9 +55,7 @@ async function saveEdit() {
 }
 
 async function copyToken(token: string) {
-  await navigator.clipboard.writeText(token)
-  isCopied[token] = true
-  setTimeout(() => { isCopied[token] = false }, 2000)
+  await copy(token)
 }
 </script>
 
@@ -220,7 +219,7 @@ async function copyToken(token: string) {
             Выручка
           </p>
           <p class="mt-2 text-3xl font-950">
-            {{ Math.round(parkStore.analytics?.total_revenue ?? 0).toLocaleString('ru-RU') }} ₸
+            {{ formatRevenue(parkStore.analytics?.total_revenue ?? 0) }}
           </p>
         </div>
       </section>
@@ -254,7 +253,7 @@ async function copyToken(token: string) {
                 type="button"
                 @click="copyToken(invite.token)"
               >
-                <span v-if="isCopied[invite.token]" class="text-emerald-300">Скопировано</span>
+                <span v-if="copied && copiedText === invite.token" class="text-emerald-300">Скопировано</span>
                 <span v-else>Копировать</span>
               </button>
               <p class="text-right text-xs text-white/38">

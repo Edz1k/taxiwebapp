@@ -4,6 +4,7 @@ import AppSelectDropdown from '~/components/app/AppSelectDropdown.vue'
 import WebPageShell from '~/components/app/WebPageShell.vue'
 import { useListFilter } from '~/composables/useListFilter'
 import { useSupportStore } from '~/stores/support'
+import { formatDate } from '~/utils/format'
 
 const support = useSupportStore()
 const { value: participantType, model: participantFilter } = useListFilter<SupportParticipantType>('passenger')
@@ -40,15 +41,6 @@ watch([participantType, status], () => loadRooms())
 
 function loadRooms() {
   support.loadRooms({ participant_type: participantType.value || undefined, status: status.value || undefined }).catch(() => {})
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('ru-RU', {
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    month: 'short',
-  }).format(new Date(value))
 }
 
 function participantLabel(value: SupportParticipantType) {
