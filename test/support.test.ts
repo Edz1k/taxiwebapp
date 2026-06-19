@@ -2,9 +2,9 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { showErrorToast } from '~/api/errors'
 import {
-  assignTechSupportRoom,
+  claimTechSupportRoom,
+  closeTechSupportRoom,
   listTechSupportRooms,
-  requestCloseTechSupportRoom,
 } from '~/api/support'
 import { useSupportStore } from '~/stores/support'
 
@@ -13,9 +13,9 @@ vi.mock('~/api/errors', () => ({
 }))
 
 vi.mock('~/api/support', () => ({
-  assignTechSupportRoom: vi.fn(),
+  claimTechSupportRoom: vi.fn(),
+  closeTechSupportRoom: vi.fn(),
   listTechSupportRooms: vi.fn(),
-  requestCloseTechSupportRoom: vi.fn(),
 }))
 
 const openRoom = {
@@ -74,37 +74,39 @@ describe('support store', () => {
     expect(store.rooms).toEqual([driverRoom])
   })
 
-  it('assigns support room', async () => {
-    vi.mocked(assignTechSupportRoom).mockResolvedValue({ message: 'assigned' })
+  it('claims support room when it is opened', async () => {
+    const assignedRoom = { ...openRoom, agent_id: 'agent-id' }
+    vi.mocked(claimTechSupportRoom).mockResolvedValue(assignedRoom)
     const store = useSupportStore()
 
-    await store.assignRoom(openRoom)
+    const result = await store.loadRoom('room-id')
 
-    expect(assignTechSupportRoom).toHaveBeenCalledWith('room-id')
-    expect(store.isMutating).toBe(false)
+    expect(claimTechSupportRoom).toHaveBeenCalledWith('room-id')
+    expect(result).toEqual(assignedRoom)
+    expect(store.currentRoom).toEqual(assignedRoom)
   })
 
-  it('marks support room as pending close after backend success', async () => {
-    vi.mocked(requestCloseTechSupportRoom).mockResolvedValue({ message: 'close requested' })
+  it('marks support room as closed after backend success', async () => {
+    vi.mocked(closeTechSupportRoom).mockResolvedValue({ message: 'room closed' })
     const store = useSupportStore()
     const room = { ...openRoom }
 
     await store.closeRoom(room)
 
-    expect(requestCloseTechSupportRoom).toHaveBeenCalledWith('room-id')
-    expect(room.status).toBe('pending_close')
+    expect(closeTechSupportRoom).toHaveBeenCalledWith('room-id')
+    expect(room.status).toBe('closed')
     expect(store.isMutating).toBe(false)
   })
 
-  it('marks current room as pending close too', async () => {
-    vi.mocked(requestCloseTechSupportRoom).mockResolvedValue({ message: 'close requested' })
+  it('marks current room as closed too', async () => {
+    vi.mocked(closeTechSupportRoom).mockResolvedValue({ message: 'room closed' })
     const store = useSupportStore()
     const room = { ...openRoom }
     store.currentRoom = room
 
     await store.closeRoom(room)
 
-    expect(store.currentRoom?.status).toBe('pending_close')
+    expect(store.currentRoom?.status).toBe('closed')
   })
 
   it('sets error message when loading rooms fails', async () => {

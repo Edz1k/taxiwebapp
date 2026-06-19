@@ -11,7 +11,6 @@ const status = ref<SupportRoomStatus | ''>('open')
 const statuses: Array<{ label: string, value: SupportRoomStatus | '' }> = [
   { label: 'Все', value: '' },
   { label: 'Открытые', value: 'open' },
-  { label: 'На закрытии', value: 'pending_close' },
   { label: 'Закрытые', value: 'closed' },
 ]
 
@@ -92,7 +91,7 @@ function statusClass(value: SupportRoomStatus) {
   <WebPageShell
     back-label="Кабинет"
     back-to="/dashboard"
-    description="Очередь обращений для техподдержки: назначение диалогов, переход в чат и закрытие решенных вопросов."
+    description="Откройте обращение, чтобы автоматически взять его в работу, ответить пользователю и закрыть решенный вопрос."
     title="Поддержка"
   >
     <template #actions>
@@ -101,7 +100,7 @@ function statusClass(value: SupportRoomStatus) {
     </template>
 
     <div class="mt-5 overflow-hidden border border-white/10 rounded-3xl bg-white/8 backdrop-blur">
-      <div class="grid-cols-[minmax(180px,1fr)_120px_120px_150px_300px] hidden gap-3 border-b border-white/8 px-4 py-3 text-xs text-white/42 font-900 uppercase md:grid">
+      <div class="grid-cols-[minmax(180px,1fr)_120px_120px_150px_120px] hidden gap-3 border-b border-white/8 px-4 py-3 text-xs text-white/42 font-900 uppercase md:grid">
         <span>Обращение</span>
         <span>Тип</span>
         <span>Статус</span>
@@ -121,7 +120,7 @@ function statusClass(value: SupportRoomStatus) {
         v-for="room in support.rooms"
         v-else
         :key="room.id"
-        class="grid gap-3 border-b border-white/6 px-4 py-4 md:grid-cols-[minmax(180px,1fr)_120px_120px_150px_300px] md:items-center last:border-b-0"
+        class="grid gap-3 border-b border-white/6 px-4 py-4 md:grid-cols-[minmax(180px,1fr)_120px_120px_150px_120px] md:items-center last:border-b-0"
       >
         <div class="min-w-0">
           <p class="truncate text-sm font-900">
@@ -142,29 +141,13 @@ function statusClass(value: SupportRoomStatus) {
         </span>
         <span class="text-sm text-white/50 font-800">{{ formatDate(room.updated_at) }}</span>
 
-        <div class="flex flex-wrap justify-start gap-2 md:justify-end">
+        <div class="flex justify-start md:justify-end">
           <RouterLink
             :to="`/support/${room.id}`"
             class="h-10 flex items-center rounded-xl bg-cyan-300 px-3 text-sm text-#06142f font-900 transition active:scale-[0.98]"
           >
             Открыть
           </RouterLink>
-          <button
-            :disabled="support.isMutating || room.status !== 'open'"
-            class="h-10 rounded-xl bg-white/8 px-3 text-sm font-900 transition active:scale-[0.98] disabled:opacity-50"
-            type="button"
-            @click="support.assignRoom(room)"
-          >
-            Назначить
-          </button>
-          <button
-            :disabled="support.isMutating || room.status !== 'open'"
-            class="h-10 rounded-xl bg-red-500/12 px-3 text-sm text-red-300 font-900 transition active:scale-[0.98] disabled:opacity-50"
-            type="button"
-            @click="support.closeRoom(room)"
-          >
-            Запросить закрытие
-          </button>
         </div>
       </div>
     </div>

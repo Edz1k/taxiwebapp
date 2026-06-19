@@ -2,11 +2,10 @@ import type { SupportListRoomsParams, SupportMessage, SupportRoom } from '~/type
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { showErrorToast } from '~/api/errors'
 import {
-  assignTechSupportRoom,
+  claimTechSupportRoom,
+  closeTechSupportRoom,
   getTechSupportMessages,
-  getTechSupportRoom,
   listTechSupportRooms,
-  requestCloseTechSupportRoom,
   sendTechSupportMessage,
 } from '~/api/support'
 
@@ -43,7 +42,7 @@ export const useSupportStore = defineStore('support', () => {
     errorMessage.value = ''
 
     try {
-      currentRoom.value = await getTechSupportRoom(id)
+      currentRoom.value = await claimTechSupportRoom(id)
       return currentRoom.value
     }
     catch (error) {
@@ -91,32 +90,15 @@ export const useSupportStore = defineStore('support', () => {
     }
   }
 
-  async function assignRoom(room: SupportRoom) {
-    isMutating.value = true
-    errorMessage.value = ''
-
-    try {
-      await assignTechSupportRoom(room.id)
-      room.agent_id = room.agent_id ?? 'assigned'
-    }
-    catch (error) {
-      errorMessage.value = showErrorToast(error, 'Не удалось назначить обращение.')
-      throw error
-    }
-    finally {
-      isMutating.value = false
-    }
-  }
-
   async function closeRoom(room: SupportRoom) {
     isMutating.value = true
     errorMessage.value = ''
 
     try {
-      await requestCloseTechSupportRoom(room.id)
-      room.status = 'pending_close'
+      await closeTechSupportRoom(room.id)
+      room.status = 'closed'
       if (currentRoom.value?.id === room.id)
-        currentRoom.value.status = 'pending_close'
+        currentRoom.value.status = 'closed'
     }
     catch (error) {
       errorMessage.value = showErrorToast(error, 'Не удалось закрыть обращение.')
@@ -139,7 +121,6 @@ export const useSupportStore = defineStore('support', () => {
   }
 
   return {
-    assignRoom,
     closeRoom,
     clearSupportState,
     currentRoom,

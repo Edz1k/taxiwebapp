@@ -25,18 +25,14 @@ export function listTechSupportRooms(params: SupportListRoomsParams = {}) {
   })
 }
 
-export function getTechSupportRoom(id: string) {
-  return apiRequest<SupportRoom>(`/tech-support/chats/rooms/${id}`)
-}
-
-export function assignTechSupportRoom(id: string) {
-  return apiRequest<{ message: string }>(`/tech-support/chats/rooms/${id}/assign`, {
+export function claimTechSupportRoom(id: string) {
+  return apiRequest<SupportRoom>(`/tech-support/chats/rooms/${id}/claim`, {
     method: 'POST',
   })
 }
 
-export function requestCloseTechSupportRoom(id: string) {
-  return apiRequest<{ message: string }>(`/tech-support/chats/rooms/${id}/close-request`, {
+export function closeTechSupportRoom(id: string) {
+  return apiRequest<{ message: string }>(`/tech-support/chats/rooms/${id}/close`, {
     method: 'POST',
   })
 }

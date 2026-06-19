@@ -44,10 +44,12 @@ useHead({
 })
 
 onMounted(async () => {
-  await Promise.all([
-    support.loadRoom(roomId.value).catch(() => router.push('/support')),
-    support.loadMessages(roomId.value).catch(() => {}),
-  ])
+  const room = await support.loadRoom(roomId.value).catch(() => null)
+  if (!room) {
+    await router.push('/support')
+    return
+  }
+  await support.loadMessages(roomId.value).catch(() => {})
   scrollToBottom()
 })
 
@@ -69,29 +71,16 @@ function isMyMessage(senderId: string) {
   return auth.currentUser?.id === senderId
 }
 
-async function assign() {
-  if (!support.currentRoom)
-    return
-  await support.assignRoom(support.currentRoom)
-  await support.loadRoom(roomId.value)
-}
-
 async function send() {
   const content = draft.value.trim()
   if (!content || support.isSending)
     return
-  // Автоназначение при первом ответе
-  if (!isAssigned.value) {
-    await assign().catch(() => {})
-    if (!isAssigned.value)
-      return
-  }
   draft.value = ''
   await support.sendMessage(roomId.value, content)
   scrollToBottom()
 }
 
-const isClosed = computed(() => support.currentRoom?.status !== 'open')
+const isClosed = computed(() => support.currentRoom?.status === 'closed')
 </script>
 
 <template>
@@ -132,36 +121,20 @@ const isClosed = computed(() => support.currentRoom?.status !== 'open')
           </span>
 
           <button
-            v-if="!isAssigned && !isClosed"
-            :disabled="support.isMutating"
-            class="h-9 rounded-xl bg-main-500/20 px-3 text-sm text-main-300 font-900 transition active:scale-[0.98] hover:bg-main-500/30 disabled:opacity-50"
-            type="button"
-            @click="assign"
-          >
-            Взять в работу
-          </button>
-          <button
-            v-else-if="isAssigned && !isClosed"
+            v-if="isAssigned && !isClosed"
             :disabled="support.isMutating"
             class="h-9 rounded-xl bg-red-500/15 px-3 text-sm text-red-300 font-900 transition active:scale-[0.98] hover:bg-red-500/25 disabled:opacity-50"
             type="button"
             @click="support.currentRoom && support.closeRoom(support.currentRoom)"
           >
-            Запросить закрытие
+            Решено
           </button>
         </div>
       </div>
 
-      <!-- CTA: take in work -->
-      <div
-        v-if="!support.currentRoom?.agent_id && !isClosed"
-        class="mx-auto mt-2 max-w-2xl rounded-xl bg-main-500/10 px-3 py-2 text-xs text-main-200 font-700"
-      >
-        Напишите сообщение — вы автоматически возьмёте обращение в работу.
-      </div>
       <!-- Warning: assigned to someone else -->
       <div
-        v-else-if="support.currentRoom?.agent_id && !isAssigned && !isClosed"
+        v-if="support.currentRoom?.agent_id && !isAssigned && !isClosed"
         class="mx-auto mt-2 max-w-2xl rounded-xl bg-amber-500/12 px-3 py-2 text-xs text-amber-300 font-700"
       >
         Обращение уже взял другой агент. Только он может отвечать.
