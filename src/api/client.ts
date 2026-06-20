@@ -3,6 +3,23 @@ import { clearTokenPair } from '~/composables/auth/session'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'https://api.edtaxi.kz/api/v1'
 const WS_URL = import.meta.env.VITE_WS_URL ?? API_URL.replace(/^http/, 'ws').replace(/\/api\/v1\/?$/, '')
+const MEDIA_BASE = API_URL.replace(/\/api\/v1\/?$/, '')
+
+// buildWsUrl собирает абсолютный ws(s)-URL к серверу (cookie-сессия едет
+// автоматически, т.к. фронт и API — соседние поддомены).
+export function buildWsUrl(path: string) {
+  return `${WS_URL}${path}`
+}
+
+// mediaUrl превращает относительный путь файла из API (/uploads/...) в
+// абсолютный URL. Пустые и уже абсолютные значения возвращает как есть.
+export function mediaUrl(path?: null | string) {
+  if (!path)
+    return ''
+  if (/^https?:\/\//.test(path))
+    return path
+  return `${MEDIA_BASE}${path.startsWith('/') ? '' : '/'}${path}`
+}
 
 const apiClient = axios.create({
   baseURL: API_URL,

@@ -4,6 +4,7 @@ import {
   claimTechSupportRoom,
   closeTechSupportRoom,
   getTechSupportMessages,
+  getTechSupportRoom,
   listTechSupportRooms,
   sendTechSupportMessage,
 } from '~/api/support'
@@ -29,11 +30,36 @@ export const useSupportStore = defineStore('support', () => {
     }, 'Не удалось загрузить обращения поддержки.')
   }
 
+  // loadRoom только открывает обращение на просмотр — без захвата (claim),
+  // чтобы можно было читать чужие/занятые диалоги без конфликта 409.
   async function loadRoom(id: string) {
     return withLoading(isLoading, async () => {
-      currentRoom.value = await claimTechSupportRoom(id)
+      currentRoom.value = await getTechSupportRoom(id)
       return currentRoom.value
     }, 'Не удалось загрузить обращение.')
+  }
+
+  // claimRoom явно берёт обращение в работу — только после этого агент может
+  // отвечать. Конфликт (взято другим) обрабатывается стором как ошибка.
+  async function claimRoom(id: string) {
+    return withLoading(isMutating, async () => {
+      const room = await claimTechSupportRoom(id)
+      currentRoom.value = room
+      const index = rooms.value.findIndex(r => r.id === id)
+      if (index !== -1)
+        rooms.value[index] = room
+      return room
+    }, 'Не удалось взять обращение в работу.')
+  }
+
+  // receiveMessage добавляет входящее сообщение из WS, если оно относится к
+  // открытому сейчас обращению и ещё не отображено.
+  function receiveMessage(message: SupportMessage & { room_id: string }) {
+    if (!currentRoom.value || message.room_id !== currentRoom.value.id)
+      return
+    if (messages.value.some(m => m.id === message.id))
+      return
+    messages.value = [...messages.value, message]
   }
 
   async function loadMessages(id: string) {
@@ -73,6 +99,7 @@ export const useSupportStore = defineStore('support', () => {
   }
 
   return {
+    claimRoom,
     closeRoom,
     clearSupportState,
     currentRoom,
@@ -85,6 +112,7 @@ export const useSupportStore = defineStore('support', () => {
     loadRoom,
     loadRooms,
     messages,
+    receiveMessage,
     rooms,
     sendMessage,
   }

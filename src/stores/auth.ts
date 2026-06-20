@@ -18,6 +18,7 @@ import {
 import { useAdminStore } from '~/stores/admin'
 import { useParkStore } from '~/stores/park'
 import { useSupportStore } from '~/stores/support'
+import { useVerificationStore } from '~/stores/verification'
 
 export const useAuthStore = defineStore('auth', () => {
   const currentUser = ref<AuthSession | null>(null)
@@ -63,6 +64,7 @@ export const useAuthStore = defineStore('auth', () => {
     useAdminStore().clearAdminState()
     useParkStore().clearParkState()
     useSupportStore().clearSupportState()
+    useVerificationStore().clearVerificationState()
   }
 
   function clearLocalSession() {

@@ -58,6 +58,13 @@ const accessCards = computed(() => {
       to: '/support',
     },
     {
+      description: 'Проверка фото машин при онбординге и ежедневных проверок водителей.',
+      icon: 'i-mdi-shield-car',
+      roles: ['admin', 'superadmin', 'tech_support'],
+      title: 'Верификация водителей',
+      to: '/verifications',
+    },
+    {
       description: 'Профиль парка, приглашения водителей, аналитика и чат с водителями.',
       icon: 'i-mdi-office-building-marker',
       roles: ['admin', 'superadmin', 'park'],

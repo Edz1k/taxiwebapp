@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRoute as useVueRoute } from 'vue-router'
+import { useSupportSocket } from '~/composables/useSupportSocket'
 import { useAuthStore } from '~/stores/auth'
 import { useSupportStore } from '~/stores/support'
 
@@ -7,6 +8,7 @@ const route = useVueRoute()
 const router = useRouter()
 const support = useSupportStore()
 const auth = useAuthStore()
+const socket = useSupportSocket()
 const roomId = computed(() => (route.params as Record<string, string>).id)
 const draft = ref('')
 const messagesEl = ref<HTMLElement | null>(null)
@@ -17,6 +19,22 @@ const isAssigned = computed(() => {
     return false
   return room.agent_id === auth.currentUser?.id
 })
+
+// Можно взять в работу открытое обращение, которое ещё не закреплено
+// ни за кем (или уже за нами — повторный claim безопасен).
+const canClaim = computed(() => {
+  const room = support.currentRoom
+  if (!room || room.status === 'closed')
+    return false
+  return !room.agent_id || room.agent_id === auth.currentUser?.id
+})
+
+async function claim() {
+  try {
+    await support.claimRoom(roomId.value)
+  }
+  catch {}
+}
 
 const roomStatusLabel = computed(() => {
   const status = support.currentRoom?.status
@@ -51,7 +69,10 @@ onMounted(async () => {
   }
   await support.loadMessages(roomId.value).catch(() => {})
   scrollToBottom()
+  socket.connect()
 })
+
+watch(() => support.messages.length, scrollToBottom)
 
 function scrollToBottom() {
   nextTick(() => {
@@ -122,6 +143,16 @@ const isClosed = computed(() => support.currentRoom?.status === 'closed')
           >
             {{ roomStatusLabel }}
           </span>
+
+          <button
+            v-if="!isAssigned && canClaim"
+            :disabled="support.isMutating"
+            class="h-9 rounded-xl bg-cyan-300 px-3 text-sm text-#06142f font-900 transition active:scale-[0.98] disabled:opacity-50"
+            type="button"
+            @click="claim"
+          >
+            Взять в работу
+          </button>
 
           <button
             v-if="isAssigned && !isClosed"
@@ -203,11 +234,11 @@ const isClosed = computed(() => support.currentRoom?.status === 'closed')
         <input
           v-model="draft"
           aria-label="Ответ в чат поддержки"
-          :disabled="isClosed || (!!support.currentRoom?.agent_id && !isAssigned)"
+          :disabled="isClosed || !isAssigned"
           class="h-12 min-w-0 flex-1 border border-white/10 rounded-2xl bg-white/6 px-4 text-sm outline-none transition focus:border-main-400/60 focus:bg-white/8 disabled:opacity-40"
           maxlength="2000"
           name="support_reply"
-          :placeholder="isClosed ? 'Чат закрывается или закрыт' : support.currentRoom?.agent_id && !isAssigned ? 'Взято другим агентом' : 'Написать ответ...'"
+          :placeholder="isClosed ? 'Чат закрывается или закрыт' : isAssigned ? 'Написать ответ...' : support.currentRoom?.agent_id ? 'Взято другим агентом' : 'Возьмите обращение в работу'"
           @keydown.enter.exact.prevent="send"
         >
         <button

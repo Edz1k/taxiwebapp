@@ -25,6 +25,10 @@ export function listTechSupportRooms(params: SupportListRoomsParams = {}) {
   })
 }
 
+export function getTechSupportRoom(id: string) {
+  return apiRequest<SupportRoom>(`/tech-support/chats/rooms/${id}`)
+}
+
 export function claimTechSupportRoom(id: string) {
   return apiRequest<SupportRoom>(`/tech-support/chats/rooms/${id}/claim`, {
     method: 'POST',
