@@ -60,4 +60,3 @@ export function logout(_payload: LogoutPayload = {}) {
     body: {},
   })
 }
-

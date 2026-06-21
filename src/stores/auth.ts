@@ -56,8 +56,12 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function syncSession() {
-    pendingPhone.value = readPendingPhone()
-    pendingFlow.value = readPendingAuthFlow()
+    const storedPhone = readPendingPhone()
+
+    if (storedPhone) {
+      pendingPhone.value = storedPhone
+      pendingFlow.value = readPendingAuthFlow()
+    }
   }
 
   function clearRelatedStores() {
@@ -151,6 +155,16 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function restoreSessionAfterLogin() {
+    const session = await restoreSession({ force: true })
+
+    if (!session)
+      throw new ApiError(401, 'session restore failed after login', {})
+
+    completeLogin()
+    return session
+  }
+
   function getDeviceFingerprint() {
     const existing = readDeviceFingerprint()
 
@@ -196,8 +210,7 @@ export const useAuthStore = defineStore('auth', () => {
         pendingFlow.value,
       )
 
-      completeLogin()
-      await restoreSession({ force: true })
+      await restoreSessionAfterLogin()
     }
     catch (error) {
       errorMessage.value = showErrorToast(error, 'Не удалось подтвердить код. Попробуйте еще раз.')

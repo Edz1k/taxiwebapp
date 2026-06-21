@@ -103,6 +103,12 @@ async function request<T>(path: string, options: ApiRequestOptions) {
   return response.data as unknown as T
 }
 
+function getResponseErrorMessage(data: unknown) {
+  return typeof data === 'object' && data && 'error' in data
+    ? String(data.error)
+    : ''
+}
+
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   try {
     return await request<T>(path, options)
@@ -111,7 +117,12 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
     if (!isAxiosError(error))
       throw error
 
-    if (error.response?.status === 401 && !options.skipAuthRefresh) {
+    const responseMessage = getResponseErrorMessage(error.response?.data)
+    const shouldRefresh = error.response?.status === 401
+      && responseMessage !== 'missing token'
+      && !options.skipAuthRefresh
+
+    if (shouldRefresh) {
       const refreshed = await refreshAuthToken(options.deviceFingerprint)
 
       if (refreshed)
@@ -120,9 +131,7 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 
     const status = error.response?.status ?? 0
     const data = error.response?.data
-    const message = typeof data === 'object' && data && 'error' in data
-      ? String(data.error)
-      : (error.response?.statusText || error.message)
+    const message = responseMessage || error.response?.statusText || error.message
 
     throw new ApiError(status, message, data)
   }

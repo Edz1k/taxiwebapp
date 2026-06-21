@@ -141,6 +141,20 @@ describe('auth store', () => {
     expect(auth.homePath).toBe(homePath)
   })
 
+  it('keeps pending login when OTP succeeds but the cookie session is missing', async () => {
+    vi.mocked(verifyOtp).mockResolvedValue({ role: 'admin' })
+    vi.mocked(getAuthSession).mockRejectedValue(new ApiError(401, 'missing token', {}))
+    const auth = useAuthStore()
+    auth.setPendingPhone('+77771234567', 'admin')
+
+    await expect(auth.confirmOtp('123456')).rejects.toThrow('session restore failed after login')
+
+    expect(auth.pendingPhone).toBe('+77771234567')
+    expect(auth.pendingFlow).toBe('admin')
+    expect(auth.currentUser).toBeNull()
+    expect(auth.sessionStatus).toBe('guest')
+  })
+
   it('clears local auth state even when server logout fails', async () => {
     vi.mocked(logoutRequest).mockRejectedValue(new Error('network down'))
     const admin = useAdminStore()
