@@ -31,8 +31,8 @@ function photos(items: Array<{ label: string, url: null | string }>) {
 
 <template>
   <WebPageShell
-    back-label="Кабинет"
-    back-to="/dashboard"
+    back-label="Поддержка"
+    back-to="/support"
     description="Проверяйте фото машин при онбординге и ежедневные проверки водителей перед выходом на линию."
     title="Верификация водителей"
   >

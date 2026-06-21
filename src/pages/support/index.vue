@@ -73,6 +73,13 @@ function statusClass(value: SupportRoomStatus) {
     title="Поддержка"
   >
     <template #actions>
+      <RouterLink
+        class="h-11 inline-flex items-center gap-2 border border-white/12 rounded-full bg-white/8 px-4 text-sm font-900 transition hover:bg-white/12"
+        to="/support/verifications"
+      >
+        <span class="i-mdi-shield-car text-5 text-cyan-200" />
+        Верификация
+      </RouterLink>
       <AppSelectDropdown v-model="participantFilter" label="Тип" :options="participantTypes" />
       <AppSelectDropdown v-model="statusFilter" label="Статус" :options="statuses" />
     </template>

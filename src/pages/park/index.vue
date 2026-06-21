@@ -6,8 +6,9 @@ import { formatRevenue } from '~/utils/format'
 const parkStore = useParkStore()
 
 const isEditing = ref(false)
-const editForm = reactive({ name: '', description: '', bin: '', phone: '', commission_rate: 0 })
-const { copy, copied, source: copiedText } = useClipboard({ legacy: true })
+const editForm = reactive({ name: '', description: '', bin: '', phone: '', commission_rate_pct: 0 })
+const { copy, copied } = useClipboard({ legacy: true })
+const copiedToken = ref('')
 
 definePage({
   meta: {
@@ -38,7 +39,7 @@ function openEdit() {
   editForm.description = parkStore.park.description ?? ''
   editForm.bin = parkStore.park.bin ?? ''
   editForm.phone = parkStore.park.phone ?? ''
-  editForm.commission_rate = parkStore.park.commission_rate
+  editForm.commission_rate_pct = +(parkStore.park.commission_rate * 100).toFixed(1)
   isEditing.value = true
 }
 
@@ -48,7 +49,7 @@ async function saveEdit() {
     description: editForm.description || undefined,
     bin: editForm.bin || undefined,
     phone: editForm.phone || undefined,
-    commission_rate: editForm.commission_rate || undefined,
+    commission_rate: editForm.commission_rate_pct ? +(editForm.commission_rate_pct / 100).toFixed(4) : undefined,
   }
   await parkStore.update(payload)
   isEditing.value = false
@@ -56,6 +57,7 @@ async function saveEdit() {
 
 async function copyToken(token: string) {
   await copy(token)
+  copiedToken.value = token
 }
 </script>
 
@@ -121,7 +123,7 @@ async function copyToken(token: string) {
               </label>
               <label class="grid gap-1.5">
                 <span class="text-xs text-white/42 font-900 uppercase">Комиссия (%)</span>
-                <input v-model.number="editForm.commission_rate" class="h-11 w-full border border-white/10 rounded-xl bg-white/8 px-4 text-sm outline-none focus:border-cyan-300/40" type="number" step="0.1" min="0" max="100">
+                <input v-model.number="editForm.commission_rate_pct" class="h-11 w-full border border-white/10 rounded-xl bg-white/8 px-4 text-sm outline-none focus:border-cyan-300/40" type="number" step="0.1" min="0" max="3">
               </label>
             </div>
 
@@ -253,7 +255,7 @@ async function copyToken(token: string) {
                 type="button"
                 @click="copyToken(invite.token)"
               >
-                <span v-if="copied && copiedText === invite.token" class="text-emerald-300">Скопировано</span>
+                <span v-if="copied && copiedToken === invite.token" class="text-emerald-300">Скопировано</span>
                 <span v-else>Копировать</span>
               </button>
               <p class="text-right text-xs text-white/38">
@@ -293,6 +295,26 @@ async function copyToken(token: string) {
               Удалить
             </button>
           </div>
+        </div>
+      </section>
+
+      <section class="border border-white/10 rounded-3xl bg-white/8 p-5 backdrop-blur">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p class="text-xs text-white/42 font-900 uppercase">
+              Чат
+            </p>
+            <h2 class="mt-1 text-xl font-950">
+              Сообщения водителей
+            </h2>
+          </div>
+          <RouterLink
+            class="h-10 inline-flex items-center gap-2 rounded-xl bg-cyan-300 px-4 text-sm text-#06142f font-900 transition hover:bg-cyan-200"
+            to="/park/chat"
+          >
+            <span class="i-mdi-chat-outline text-4.5" />
+            Открыть чат
+          </RouterLink>
         </div>
       </section>
     </div>

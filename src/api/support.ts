@@ -51,23 +51,3 @@ export function sendTechSupportMessage(id: string, content: string) {
     body: { content },
   })
 }
-
-export function getDailyVerifications() {
-  return apiRequest(`/tech-support/verifications/daily-checks`)
-}
-
-// GET /api/v1/tech-support/verifications/daily-checks
-// {
-//   "id": "uuid",
-//   "driver_id": "uuid",
-//   "vehicle_id": "uuid",
-//   "selfie_url": "https://.../uploads/daily-checks/...",
-//   "vehicle_photo_url": "https://.../uploads/daily-checks/...",
-//   "status": "pending",
-//   "rejection_reason": null,
-//   "reviewed_by": null,
-//   "reviewed_at": null,
-//   "created_at": "...",
-//   "driver_face_photo_url": "https://.../uploads/driver-faces/...",
-//   "vehicle_tech_passport_photo_url": "https://.../uploads/tech-passports/..."
-// }

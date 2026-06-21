@@ -2,9 +2,14 @@ import type {
   AdminParkChatsResponse,
   AdminParksResponse,
   ParkAnalytics,
+  ParkChatMessage,
+  ParkChatMessagesResponse,
+  ParkChatRoom,
+  ParkChatRoomsResponse,
   ParkDriversResponse,
   ParkInvite,
   ParkInvitesResponse,
+  ParkStatus,
   TaxiPark,
   TaxiParkRegisterPayload,
   TaxiParkUpdatePayload,
@@ -53,9 +58,40 @@ export function getParkAnalytics() {
   return apiRequest<ParkAnalytics>('/park/analytics')
 }
 
-export function listAdminParks(limit = 20, offset = 0) {
+// Park chat (park owner side)
+export function listParkChatRooms(params: { status?: string, limit?: number, offset?: number } = {}) {
+  return apiRequest<ParkChatRoomsResponse>('/park/chat/rooms', { params })
+}
+
+export function getParkChatRoom(id: string) {
+  return apiRequest<ParkChatRoom>(`/park/chat/rooms/${id}`)
+}
+
+export function sendParkChatMessage(roomId: string, content: string) {
+  return apiRequest<ParkChatMessage>(`/park/chat/rooms/${roomId}/messages`, {
+    method: 'POST',
+    body: { content },
+  })
+}
+
+export function getParkChatMessages(roomId: string, params: { limit?: number, offset?: number } = {}) {
+  return apiRequest<ParkChatMessagesResponse>(`/park/chat/rooms/${roomId}/messages`, { params })
+}
+
+export function closeParkChatRoom(roomId: string) {
+  return apiRequest<{ message: string }>(`/park/chat/rooms/${roomId}/close`, {
+    method: 'POST',
+  })
+}
+
+// Admin park management
+export function listAdminParks(params: { status?: ParkStatus | '', limit?: number, offset?: number } = {}) {
   return apiRequest<AdminParksResponse>('/admin/parks', {
-    params: { limit, offset },
+    params: {
+      status: params.status || undefined,
+      limit: params.limit,
+      offset: params.offset,
+    },
   })
 }
 
@@ -65,9 +101,10 @@ export function verifyAdminPark(id: string) {
   })
 }
 
-export function rejectAdminPark(id: string) {
+export function rejectAdminPark(id: string, reason = '') {
   return apiRequest<{ message: string }>(`/admin/parks/${id}/reject`, {
     method: 'POST',
+    body: { reason },
   })
 }
 

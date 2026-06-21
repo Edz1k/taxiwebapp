@@ -103,6 +103,20 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/park/chat/': RouteRecordInfo<
+      '/park/chat/',
+      '/park/chat',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/park/chat/[id]': RouteRecordInfo<
+      '/park/chat/[id]',
+      '/park/chat/:id',
+      { id: ParamValue<true> },
+      { id: ParamValue<false> },
+      | never
+    >,
     '/park/login': RouteRecordInfo<
       '/park/login',
       '/park/login',
@@ -138,9 +152,9 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/verifications/': RouteRecordInfo<
-      '/verifications/',
-      '/verifications',
+    '/support/verifications': RouteRecordInfo<
+      '/support/verifications',
+      '/support/verifications',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -224,6 +238,18 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/park/chat/index.vue': {
+      routes:
+        | '/park/chat/'
+      views:
+        | never
+    }
+    'src/pages/park/chat/[id].vue': {
+      routes:
+        | '/park/chat/[id]'
+      views:
+        | never
+    }
     'src/pages/park/login.vue': {
       routes:
         | '/park/login'
@@ -254,9 +280,9 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
-    'src/pages/verifications/index.vue': {
+    'src/pages/support/verifications.vue': {
       routes:
-        | '/verifications/'
+        | '/support/verifications'
       views:
         | never
     }
