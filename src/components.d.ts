@@ -19,6 +19,7 @@ declare module 'vue' {
     AuthScreen: typeof import('./components/auth/AuthScreen.vue')['default']
     NavigationComponent: typeof import('./components/NavigationComponent.vue')['default']
     OtpInput: typeof import('./components/auth/OtpInput.vue')['default']
+    OtpSelect: typeof import('./components/auth/OtpSelect.vue')['default']
     PhoneInput: typeof import('./components/auth/PhoneInput.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

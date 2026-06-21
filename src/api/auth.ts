@@ -31,6 +31,7 @@ export function sendOtp(payload: SendOtpPayload, flow: AuthLoginFlow = 'admin') 
     skipAuth: true,
     skipAuthRefresh: true,
     body: {
+      channel: payload.channel,
       phone: payload.phone,
     },
   })

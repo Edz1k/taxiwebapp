@@ -3,6 +3,7 @@ const OBSOLETE_REFRESH_TOKEN_KEY = 'taxiapp_refresh_token'
 const OBSOLETE_ACTIVE_ROLE_KEY = 'taxiapp_active_role'
 const PHONE_KEY = 'taxiwebapp_pending_phone'
 const FLOW_KEY = 'taxiwebapp_pending_auth_flow'
+const OTP_DELIVERY_METHOD_KEY = 'taxiwebapp_otp_delivery_method'
 const DEVICE_FP_KEY = 'taxiwebapp_device_fp'
 export const AUTH_SESSION_CHANGED_EVENT = 'taxiwebapp:auth-session-changed'
 
@@ -67,12 +68,27 @@ export function savePendingAuthFlow(flow: StoredAuthFlow) {
   sessionStorage.setItem(FLOW_KEY, flow)
 }
 
+export function readOtpDeliveryMethod() {
+  if (!canUseStorage())
+    return 'whatsapp'
+
+  return sessionStorage.getItem(OTP_DELIVERY_METHOD_KEY) === 'sms' ? 'sms' : 'whatsapp'
+}
+
+export function saveOtpDeliveryMethod(method: 'sms' | 'whatsapp') {
+  if (!canUseStorage())
+    return
+
+  sessionStorage.setItem(OTP_DELIVERY_METHOD_KEY, method)
+}
+
 export function clearPendingPhone() {
   if (!canUseStorage())
     return
 
   sessionStorage.removeItem(PHONE_KEY)
   sessionStorage.removeItem(FLOW_KEY)
+  sessionStorage.removeItem(OTP_DELIVERY_METHOD_KEY)
 }
 
 export function readDeviceFingerprint() {

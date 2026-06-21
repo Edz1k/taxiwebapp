@@ -92,7 +92,7 @@ describe('auth store', () => {
     await auth.requestOtp('+77771234567')
     await auth.confirmOtp('123456')
 
-    expect(sendOtp).toHaveBeenCalledWith({ phone: '+77771234567' }, 'admin')
+    expect(sendOtp).toHaveBeenCalledWith({ channel: 'whatsapp', phone: '+77771234567' }, 'admin')
     expect(verifyOtp).toHaveBeenCalledWith(
       {
         code: '123456',
@@ -123,7 +123,7 @@ describe('auth store', () => {
 
     expect(auth.pendingPhone).toBe('+77771234567')
     expect(auth.pendingFlow).toBe(flow)
-    expect(sendOtp).toHaveBeenCalledWith({ phone: '+77771234567' }, flow)
+    expect(sendOtp).toHaveBeenCalledWith({ channel: 'whatsapp', phone: '+77771234567' }, flow)
 
     await auth.confirmOtp('123456')
 

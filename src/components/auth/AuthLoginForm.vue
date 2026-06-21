@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuthLoginFlow } from '~/types/auth'
+import type { AuthLoginFlow, OtpDeliveryMethod } from '~/types/auth'
 import { isKazakhstanPhoneComplete, toKazakhstanE164 } from '~/composables/auth/phone'
 import { useAuthStore } from '~/stores/auth'
 
@@ -18,6 +18,7 @@ auth.loadSession()
 
 const phone = ref('')
 const code = ref('')
+const otpDeliveryMethod = ref<OtpDeliveryMethod>(auth.pendingOtpDeliveryMethod)
 const step = ref<'code' | 'phone'>(auth.pendingPhone && auth.pendingFlow === props.flow ? 'code' : 'phone')
 
 const isPhoneStep = computed(() => step.value === 'phone')
@@ -30,7 +31,7 @@ const canSubmit = computed(() => {
 
 async function submit() {
   if (isPhoneStep.value) {
-    await auth.requestOtp(toKazakhstanE164(phone.value), props.flow)
+    await auth.requestOtp(toKazakhstanE164(phone.value), props.flow, otpDeliveryMethod.value)
     step.value = 'code'
     return
   }
@@ -41,6 +42,7 @@ async function submit() {
 
 function editPhone() {
   auth.clearPendingLogin()
+  otpDeliveryMethod.value = 'whatsapp'
   code.value = ''
   step.value = 'phone'
 }
@@ -53,12 +55,15 @@ function editPhone() {
     :title="title"
   >
     <form class="mt-8 space-y-4" @submit.prevent="submit">
-      <PhoneInput v-if="isPhoneStep" v-model="phone" />
+      <template v-if="isPhoneStep">
+        <PhoneInput v-model="phone" />
+        <OtpSelect v-model="otpDeliveryMethod" />
+      </template>
 
       <div v-else class="space-y-4">
         <div class="rounded-2xl bg-white/5 px-4 py-3">
           <p class="text-xs text-slate-500 font-800 uppercase">
-            Код отправлен
+            Код отправлен {{ auth.pendingOtpDeliveryMethod === 'whatsapp' ? 'в WhatsApp' : 'по SMS' }}
           </p>
           <div class="mt-1 flex items-center justify-between gap-3">
             <span class="text-sm text-slate-200 font-800">{{ auth.pendingPhone }}</span>
