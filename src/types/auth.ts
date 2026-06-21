@@ -4,6 +4,7 @@ export interface MessageResponse {
 
 export type AuthRole = 'admin' | 'driver' | 'park' | 'passenger' | 'superadmin' | 'tech_support'
 export type AuthLoginFlow = 'admin' | 'park' | 'tech_support'
+export type OtpDeliveryMethod = 'sms' | 'whatsapp'
 
 export interface AuthLoginResponse {
   phone_verified?: boolean
@@ -21,6 +22,7 @@ export interface AuthSession {
 }
 
 export interface SendOtpPayload {
+  channel?: OtpDeliveryMethod
   phone: string
 }
 

@@ -62,7 +62,7 @@ const accessCards = computed(() => {
       icon: 'i-mdi-shield-car',
       roles: ['admin', 'superadmin', 'tech_support'],
       title: 'Верификация водителей',
-      to: '/verifications',
+      to: '/support/verifications',
     },
     {
       description: 'Профиль парка, приглашения водителей, аналитика и чат с водителями.',

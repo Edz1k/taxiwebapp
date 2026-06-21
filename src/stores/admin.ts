@@ -1,9 +1,8 @@
 import type { AdminAssignableRole, AdminListTripsParams, AdminListUsersParams, AdminTechSupportNumber, AdminUser, CreateParkOwnerPayload } from '~/types/admin'
-import type { ParkChatRoom, TaxiPark } from '~/types/park'
+import type { ParkChatRoom, ParkStatus, TaxiPark } from '~/types/park'
 import type { Trip } from '~/types/trips'
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { addAdminUserRole, addTechSupportNumber as addTechSupportNumberApi, blockAdminUser, createParkOwner as createParkOwnerApi, getAdminTrip, listAdminTrips, listAdminUsers, listTechSupportNumbers, removeAdminUserRole, removeTechSupportNumber as removeTechSupportNumberApi } from '~/api/admin'
-import { showErrorToast } from '~/api/errors'
 import { listAdminParkChats, listAdminParks, rejectAdminPark, verifyAdminPark } from '~/api/park'
 import { useStoreAction } from '~/composables/useStoreAction'
 
@@ -72,9 +71,9 @@ export const useAdminStore = defineStore('admin', () => {
     }, 'Не удалось загрузить поездку.')
   }
 
-  async function loadParks(limit = 20, offset = 0) {
+  async function loadParks(params: { status?: ParkStatus | '', limit?: number, offset?: number } = {}) {
     return withLoading(isLoadingParks, async () => {
-      const response = await listAdminParks(limit, offset)
+      const response = await listAdminParks(params)
       parks.value = response.parks
       return response
     }, 'Не удалось загрузить таксопарки.')
@@ -84,13 +83,16 @@ export const useAdminStore = defineStore('admin', () => {
     return withLoading(isMutating, async () => {
       await verifyAdminPark(park.id)
       park.is_verified = true
+      park.status = 'approved'
     }, 'Не удалось подтвердить таксопарк.')
   }
 
-  async function rejectPark(park: TaxiPark) {
+  async function rejectPark(park: TaxiPark, reason: string) {
     return withLoading(isMutating, async () => {
-      await rejectAdminPark(park.id)
-      parks.value = parks.value.filter(p => p.id !== park.id)
+      await rejectAdminPark(park.id, reason)
+      park.status = 'rejected'
+      park.rejection_reason = reason
+      park.is_verified = false
     }, 'Не удалось отклонить таксопарк.')
   }
 

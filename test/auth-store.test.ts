@@ -92,7 +92,7 @@ describe('auth store', () => {
     await auth.requestOtp('+77771234567')
     await auth.confirmOtp('123456')
 
-    expect(sendOtp).toHaveBeenCalledWith({ phone: '+77771234567' }, 'admin')
+    expect(sendOtp).toHaveBeenCalledWith({ channel: 'whatsapp', phone: '+77771234567' }, 'admin')
     expect(verifyOtp).toHaveBeenCalledWith(
       {
         code: '123456',
@@ -123,7 +123,7 @@ describe('auth store', () => {
 
     expect(auth.pendingPhone).toBe('+77771234567')
     expect(auth.pendingFlow).toBe(flow)
-    expect(sendOtp).toHaveBeenCalledWith({ phone: '+77771234567' }, flow)
+    expect(sendOtp).toHaveBeenCalledWith({ channel: 'whatsapp', phone: '+77771234567' }, flow)
 
     await auth.confirmOtp('123456')
 
@@ -139,6 +139,20 @@ describe('auth store', () => {
     expect(auth.pendingPhone).toBe('')
     expect(auth.pendingFlow).toBe('admin')
     expect(auth.homePath).toBe(homePath)
+  })
+
+  it('keeps pending login when OTP succeeds but the cookie session is missing', async () => {
+    vi.mocked(verifyOtp).mockResolvedValue({ role: 'admin' })
+    vi.mocked(getAuthSession).mockRejectedValue(new ApiError(401, 'missing token', {}))
+    const auth = useAuthStore()
+    auth.setPendingPhone('+77771234567', 'admin')
+
+    await expect(auth.confirmOtp('123456')).rejects.toThrow('session restore failed after login')
+
+    expect(auth.pendingPhone).toBe('+77771234567')
+    expect(auth.pendingFlow).toBe('admin')
+    expect(auth.currentUser).toBeNull()
+    expect(auth.sessionStatus).toBe('guest')
   })
 
   it('clears local auth state even when server logout fails', async () => {

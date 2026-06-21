@@ -1,4 +1,4 @@
-import type { AuthLoginFlow, AuthRole, AuthSession } from '~/types/auth'
+import type { AuthLoginFlow, AuthRole, AuthSession, OtpDeliveryMethod } from '~/types/auth'
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { getAuthSession, logout as logoutRequest, sendOtp, verifyOtp } from '~/api/auth'
 import { ApiError } from '~/api/client'
@@ -9,9 +9,11 @@ import {
   clearStoredAuthArtifacts,
   clearTokenPair,
   readDeviceFingerprint,
+  readOtpDeliveryMethod,
   readPendingAuthFlow,
   readPendingPhone,
   saveDeviceFingerprint,
+  saveOtpDeliveryMethod,
   savePendingAuthFlow,
   savePendingPhone,
 } from '~/composables/auth/session'
@@ -24,6 +26,7 @@ export const useAuthStore = defineStore('auth', () => {
   const currentUser = ref<AuthSession | null>(null)
   const pendingPhone = ref('')
   const pendingFlow = ref<AuthLoginFlow>('admin')
+  const pendingOtpDeliveryMethod = ref<OtpDeliveryMethod>('whatsapp')
   const isLoading = ref(false)
   const errorMessage = ref('')
   const sessionStatus = ref<'authenticated' | 'guest' | 'unknown'>('unknown')
@@ -56,8 +59,13 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function syncSession() {
-    pendingPhone.value = readPendingPhone()
-    pendingFlow.value = readPendingAuthFlow()
+    const storedPhone = readPendingPhone()
+
+    if (storedPhone) {
+      pendingPhone.value = storedPhone
+      pendingFlow.value = readPendingAuthFlow()
+      pendingOtpDeliveryMethod.value = readOtpDeliveryMethod()
+    }
   }
 
   function clearRelatedStores() {
@@ -71,6 +79,7 @@ export const useAuthStore = defineStore('auth', () => {
     currentUser.value = null
     pendingPhone.value = ''
     pendingFlow.value = 'admin'
+    pendingOtpDeliveryMethod.value = 'whatsapp'
     errorMessage.value = ''
     sessionStatus.value = 'guest'
     clearPendingPhone()
@@ -97,13 +106,19 @@ export const useAuthStore = defineStore('auth', () => {
     listenSessionChanges()
   }
 
-  function setPendingPhone(phone: string, flow: AuthLoginFlow = pendingFlow.value) {
+  function setPendingPhone(
+    phone: string,
+    flow: AuthLoginFlow = pendingFlow.value,
+    channel: OtpDeliveryMethod = pendingOtpDeliveryMethod.value,
+  ) {
     pendingPhone.value = phone
     pendingFlow.value = flow
+    pendingOtpDeliveryMethod.value = channel
 
     if (phone) {
       savePendingPhone(phone)
       savePendingAuthFlow(flow)
+      saveOtpDeliveryMethod(channel)
       return
     }
 
@@ -115,11 +130,13 @@ export const useAuthStore = defineStore('auth', () => {
     clearPendingPhone()
     pendingPhone.value = ''
     pendingFlow.value = 'admin'
+    pendingOtpDeliveryMethod.value = 'whatsapp'
   }
 
   function clearPendingLogin() {
     pendingPhone.value = ''
     pendingFlow.value = 'admin'
+    pendingOtpDeliveryMethod.value = 'whatsapp'
     clearPendingPhone()
   }
 
@@ -151,6 +168,16 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function restoreSessionAfterLogin() {
+    const session = await restoreSession({ force: true })
+
+    if (!session)
+      throw new ApiError(401, 'session restore failed after login', {})
+
+    completeLogin()
+    return session
+  }
+
   function getDeviceFingerprint() {
     const existing = readDeviceFingerprint()
 
@@ -162,13 +189,17 @@ export const useAuthStore = defineStore('auth', () => {
     return fingerprint
   }
 
-  async function requestOtp(phone: string, flow: AuthLoginFlow = 'admin') {
+  async function requestOtp(
+    phone: string,
+    flow: AuthLoginFlow = 'admin',
+    channel: OtpDeliveryMethod = 'whatsapp',
+  ) {
     isLoading.value = true
     errorMessage.value = ''
 
     try {
-      await sendOtp({ phone }, flow)
-      setPendingPhone(phone, flow)
+      await sendOtp({ channel, phone }, flow)
+      setPendingPhone(phone, flow, channel)
     }
     catch (error) {
       errorMessage.value = showErrorToast(error, 'Не удалось отправить код. Попробуйте еще раз.')
@@ -196,8 +227,7 @@ export const useAuthStore = defineStore('auth', () => {
         pendingFlow.value,
       )
 
-      completeLogin()
-      await restoreSession({ force: true })
+      await restoreSessionAfterLogin()
     }
     catch (error) {
       errorMessage.value = showErrorToast(error, 'Не удалось подтвердить код. Попробуйте еще раз.')
@@ -240,6 +270,7 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     pendingPhone,
     pendingFlow,
+    pendingOtpDeliveryMethod,
     requestOtp,
     restoreSession,
     roles,
